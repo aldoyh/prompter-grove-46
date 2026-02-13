@@ -1,103 +1,140 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { PromptCard } from '@/components/PromptCard';
+import { PromptEditor } from '@/components/PromptEditor';
+import { SearchBar } from '@/components/SearchBar';
+
+interface Prompt {
+  id: string;
+  title: string;
+  text: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  color?: string;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDark(prefersDark);
+    fetchPrompts();
+  }, []);
+
+  useEffect(() => {
+    filterPrompts(searchTerm);
+  }, [prompts, searchTerm]);
+
+  const fetchPrompts = async () => {
+    try {
+      setLoading(true);
+      const data = JSON.parse(localStorage.getItem('prompts') || '[]');
+      setPrompts(data);
+    } catch (error) {
+      console.error('Failed to fetch prompts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterPrompts = (term: string) => {
+    const filtered = prompts.filter(p =>
+      p.title.toLowerCase().includes(term.toLowerCase()) ||
+      p.text.toLowerCase().includes(term.toLowerCase()) ||
+      p.tags.some(tag => tag.toLowerCase().includes(term.toLowerCase()))
+    );
+    setFilteredPrompts(filtered);
+  };
+
+  const handleAddPrompt = (prompt: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newPrompt: Prompt = {
+      ...prompt,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const updated = [newPrompt, ...prompts];
+    setPrompts(updated);
+    localStorage.setItem('prompts', JSON.stringify(updated));
+  };
+
+  const handleUpdatePrompt = (id: string, updates: Partial<Prompt>) => {
+    const updated = prompts.map(p =>
+      p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+    );
+    setPrompts(updated);
+    localStorage.setItem('prompts', JSON.stringify(updated));
+    setEditingId(null);
+  };
+
+  const handleDeletePrompt = (id: string) => {
+    const updated = prompts.filter(p => p.id !== id);
+    setPrompts(updated);
+    localStorage.setItem('prompts', JSON.stringify(updated));
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+              ✨
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Prompts</h1>
+          </div>
         </div>
+      </header>
+
+      {/* Search Bar */}
+      <SearchBar value={searchTerm} onChange={setSearchTerm} />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Create New Prompt */}
+        <div className="mb-12">
+          <PromptEditor onSave={handleAddPrompt} onClose={() => {}} isCreate={true} />
+        </div>
+
+        {/* Prompts Grid */}
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        ) : filteredPrompts.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">📝</div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {prompts.length === 0 ? 'No prompts yet' : 'No matches found'}
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              {prompts.length === 0 ? 'Create your first prompt to get started' : 'Try adjusting your search terms'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+            {filteredPrompts.map(prompt => (
+              <PromptCard
+                key={prompt.id}
+                prompt={prompt}
+                onEdit={setEditingId}
+                onDelete={handleDeletePrompt}
+                isEditing={editingId === prompt.id}
+                onSaveEdit={handleUpdatePrompt}
+              />
+            ))}
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
