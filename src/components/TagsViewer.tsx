@@ -42,24 +42,38 @@ export function TagsViewer({
   }
 
   return (
-    <aside className="sticky top-32 h-fit">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden backdrop-blur-sm bg-white/50 dark:bg-slate-800/50">
+    <aside className="sticky top-20 h-fit">
+      <div className="rounded-lg border overflow-hidden" style={{ 
+        backgroundColor: 'var(--bg-surface)',
+        borderColor: 'var(--border-color)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
         {/* Header */}
         <div
-          className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 dark:from-indigo-950/40 dark:to-purple-950/40 cursor-pointer hover:from-indigo-100/80 hover:to-purple-100/80 dark:hover:from-indigo-950/60 dark:hover:to-purple-950/60 transition-colors border-b border-slate-200 dark:border-slate-700"
+          className="flex items-center justify-between p-3 cursor-pointer transition-colors"
+          style={{
+            borderBottom: '1px solid var(--border-color)',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05))'
+          }}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-2">
             <span className="text-lg">🏷️</span>
-            <h3 className="font-semibold text-gray-900 dark:text-white">{t(language, 'tags')}</h3>
-            <span className="text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-full font-medium">
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+              {t(language, 'tags')}
+            </h3>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{
+              backgroundColor: 'var(--primary)',
+              color: 'white'
+            }}>
               {sortedTags.length}
             </span>
           </div>
           <svg
-            className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform ${
+            className={`w-4 h-4 transition-transform ${
               isExpanded ? 'rotate-180' : ''
             }`}
+            style={{ color: 'var(--text-secondary)' }}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -70,18 +84,22 @@ export function TagsViewer({
 
         {/* Tags List */}
         {isExpanded && (
-          <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
+          <div className="p-3 space-y-1.5 max-h-96 overflow-y-auto">
             {selectedTag && (
               <button
                 onClick={onClearFilter}
-                className="w-full px-3 py-2 text-sm bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:from-indigo-200 hover:to-purple-200 dark:hover:from-indigo-900 dark:hover:to-purple-900 transition-colors font-medium flex items-center justify-between"
+                className="w-full px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between font-medium text-white"
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
               >
                 <span>✕ {t(language, 'clearFilter')}</span>
-                <span className="text-xs opacity-70">{selectedTag}</span>
+                <span className="text-xs opacity-80">{selectedTag}</span>
               </button>
             )}
 
-            <div className={selectedTag ? 'border-t border-slate-200 dark:border-slate-700 pt-2' : ''}>
+            <div className={selectedTag ? 'border-t pt-1.5' : ''} style={{ borderColor: 'var(--border-color)' }}>
               {sortedTags.map(({ tag, count }) => {
                 const isSelected = selectedTag === tag;
                 const intensity = maxCount > 0 ? (count / maxCount) * 100 : 0;
@@ -90,36 +108,37 @@ export function TagsViewer({
                   <button
                     key={tag}
                     onClick={() => onTagClick(isSelected ? '' : tag)}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-between group relative ${
-                      isSelected
-                        ? 'text-white shadow-lg'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-700/50'
-                    }`}
+                    className="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-between group relative"
+                    style={{
+                      color: isSelected ? 'white' : 'var(--text-primary)',
+                      background: isSelected ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'transparent',
+                      boxShadow: isSelected ? 'var(--shadow-md)' : 'none'
+                    }}
                   >
                     {/* Intensity bar background */}
-                    <div
-                      className={`absolute left-0 top-0 h-full rounded-lg transition-all duration-200 -z-10 ${
-                        isSelected
-                          ? 'w-full bg-gradient-to-r from-indigo-500 to-purple-500'
-                          : 'bg-indigo-100/50 dark:bg-indigo-900/20 group-hover:bg-indigo-200/50 dark:group-hover:bg-indigo-900/40'
-                      }`}
-                      style={{
-                        width: isSelected ? '100%' : `${Math.max(intensity, 10)}%`,
-                      }}
-                    />
+                    {!isSelected && (
+                      <div
+                        className="absolute left-0 top-0 h-full rounded-lg transition-all duration-200 -z-10"
+                        style={{
+                          width: `${Math.max(intensity, 10)}%`,
+                          backgroundColor: 'var(--primary)',
+                          opacity: 0.1
+                        }}
+                      />
+                    )}
 
                     {/* Tag name */}
-                    <span className="font-medium truncate relative z-10">
+                    <span className="font-medium text-sm truncate relative z-10">
                       #{tag}
                     </span>
 
                     {/* Count badge */}
                     <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full ml-2 flex-shrink-0 relative z-10 ${
-                        isSelected
-                          ? 'bg-white/20 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      }`}
+                      className="text-xs font-semibold px-2 py-1 rounded-full ml-2 flex-shrink-0 relative z-10"
+                      style={{
+                        backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.2)' : 'var(--bg-secondary)',
+                        color: isSelected ? 'white' : 'var(--text-secondary)'
+                      }}
                     >
                       {count}
                     </span>
@@ -132,10 +151,14 @@ export function TagsViewer({
 
         {/* Footer summary */}
         {isExpanded && (
-          <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-700 text-xs text-gray-600 dark:text-gray-400">
+          <div className="px-3 py-2.5 text-xs" style={{
+            backgroundColor: 'var(--bg-secondary)',
+            borderTop: '1px solid var(--border-color)',
+            color: 'var(--text-secondary)'
+          }}>
             <div className="flex justify-between">
-              <span>Total tags: <strong>{sortedTags.length}</strong></span>
-              <span>Prompts: <strong>{prompts.length}</strong></span>
+              <span>{t(language, 'totalTags')}: <strong>{sortedTags.length}</strong></span>
+              <span>{t(language, 'prompts')}: <strong>{prompts.length}</strong></span>
             </div>
           </div>
         )}

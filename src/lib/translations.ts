@@ -10,6 +10,8 @@ export const translations = {
     // Tags
     tags: 'Tags',
     clearFilter: 'Clear Filter',
+    totalTags: 'Total tags',
+    prompts: 'Prompts',
     
     // Create/Edit
     createPrompt: 'Create New Prompt',
@@ -52,6 +54,8 @@ export const translations = {
     // Tags
     tags: 'الوسوم',
     clearFilter: 'مسح المرشح',
+    totalTags: 'إجمالي الوسوم',
+    prompts: 'المحفوظات',
     
     // Create/Edit
     createPrompt: 'إنشاء محفوظة جديدة',
@@ -88,6 +92,7 @@ export const translations = {
 export type Language = keyof typeof translations;
 export type TranslationKey = keyof typeof translations.en;
 
-export function t(lang: Language, key: TranslationKey): string {
-  return translations[lang][key];
+export function t(lang: Language | string, key: TranslationKey): string {
+  const language = (lang as Language) || 'en';
+  return translations[language][key];
 }

@@ -116,19 +116,23 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950/50 transition-colors duration-300">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-light)', color: 'var(--text-primary)' }}>
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200/50 dark:border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center gap-4">
+      <header className="sticky top-0 z-40" style={{ 
+        backgroundColor: 'var(--bg-surface)',
+        borderBottom: '1px solid var(--border-color)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-indigo-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg" style={{ boxShadow: 'var(--shadow-md)' }}>
               ✨
             </div>
             <div className="flex flex-col">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 bg-clip-text text-transparent">
+              <h1 className="text-xl font-semibold bg-gradient-to-r from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 bg-clip-text text-transparent">
                 {t(language, 'appTitle')}
               </h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400 font-light">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {t(language, 'appDesc')}
               </p>
             </div>
@@ -141,8 +145,8 @@ export default function Home() {
       <SearchBar value={searchTerm} onChange={setSearchTerm} language={language} />
 
       {/* Main Layout */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Sidebar - Tags Viewer */}
           <div className="lg:col-span-1 order-2 lg:order-1">
             {!loading && (
@@ -159,26 +163,29 @@ export default function Home() {
           {/* Main Content */}
           <div className="lg:col-span-3 order-1 lg:order-2">
             {/* Create New Prompt */}
-            <div className="mb-12">
+            <div className="mb-8">
               <PromptEditor onSave={handleAddPrompt} onClose={() => {}} isCreate={true} language={language} />
             </div>
 
             {/* Prompts Grid */}
             {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 dark:border-indigo-800 border-t-indigo-600 dark:border-t-indigo-400"></div>
+              <div className="flex justify-center items-center py-24">
+                <div className="animate-spin rounded-full h-10 w-10 border-3" style={{ 
+                  borderColor: 'var(--border-color)',
+                  borderTopColor: 'var(--primary)'
+                }}></div>
               </div>
             ) : filteredPrompts.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="text-6xl mb-4">📝</div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <div className="text-center py-16">
+                <div className="text-5xl mb-3">📝</div>
+                <h3 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
                   {prompts.length === 0
                     ? t(language, 'noPrompts')
                     : selectedTag
                     ? `${t(language, 'noPromptsTag')} #${selectedTag}`
                     : t(language, 'noMatches')}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
                   {prompts.length === 0
                     ? t(language, 'noPromptsDesc')
                     : selectedTag
@@ -188,14 +195,18 @@ export default function Home() {
                 {selectedTag && (
                   <button
                     onClick={() => setSelectedTag(null)}
-                    className="mt-4 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="px-4 py-2 rounded-lg text-white text-sm font-medium transition-all"
+                    style={{ 
+                      background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                      boxShadow: 'var(--shadow-md)'
+                    }}
                   >
                     {t(language, 'clearFilter')}
                   </button>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pb-20">
                 {filteredPrompts.map(prompt => (
                   <PromptCard
                     key={prompt.id}
