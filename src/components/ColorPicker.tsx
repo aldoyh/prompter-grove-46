@@ -5,27 +5,28 @@ interface ColorPickerProps {
   onColorChange: (color: string) => void;
 }
 
+/* Modern, refined color palette with better harmony */
 export const CARD_COLORS = [
-  { name: 'white', bg: 'bg-white dark:bg-gray-800', border: 'border-gray-200 dark:border-gray-700' },
-  { name: 'red', bg: 'bg-red-50 dark:bg-red-950/30', border: 'border-red-200 dark:border-red-800' },
-  { name: 'orange', bg: 'bg-orange-50 dark:bg-orange-950/30', border: 'border-orange-200 dark:border-orange-800' },
-  { name: 'yellow', bg: 'bg-yellow-50 dark:bg-yellow-950/30', border: 'border-yellow-200 dark:border-yellow-800' },
-  { name: 'green', bg: 'bg-green-50 dark:bg-green-950/30', border: 'border-green-200 dark:border-green-800' },
-  { name: 'blue', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  { name: 'purple', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-800' },
-  { name: 'pink', bg: 'bg-pink-50 dark:bg-pink-950/30', border: 'border-pink-200 dark:border-pink-800' },
+  { name: 'slate', bg: 'bg-slate-50 dark:bg-slate-900/40', border: 'border-slate-200 dark:border-slate-700' },
+  { name: 'rose', bg: 'bg-rose-50 dark:bg-rose-950/40', border: 'border-rose-200 dark:border-rose-800' },
+  { name: 'amber', bg: 'bg-amber-50 dark:bg-amber-950/40', border: 'border-amber-200 dark:border-amber-800' },
+  { name: 'emerald', bg: 'bg-emerald-50 dark:bg-emerald-950/40', border: 'border-emerald-200 dark:border-emerald-800' },
+  { name: 'cyan', bg: 'bg-cyan-50 dark:bg-cyan-950/40', border: 'border-cyan-200 dark:border-cyan-800' },
+  { name: 'indigo', bg: 'bg-indigo-50 dark:bg-indigo-950/40', border: 'border-indigo-200 dark:border-indigo-800' },
+  { name: 'violet', bg: 'bg-violet-50 dark:bg-violet-950/40', border: 'border-violet-200 dark:border-violet-800' },
+  { name: 'fuchsia', bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/40', border: 'border-fuchsia-200 dark:border-fuchsia-800' },
 ];
 
 export function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) {
   return (
-    <div className="flex gap-2 items-center">
+    <div className="flex gap-2 items-center flex-wrap">
       {CARD_COLORS.map((color) => (
         <button
           key={color.name}
           onClick={() => onColorChange(color.name)}
-          className={`w-6 h-6 rounded-full border-2 transition-all ${
+          className={`w-7 h-7 rounded-lg border-2 transition-all ${
             selectedColor === color.name
-              ? 'border-gray-900 dark:border-white scale-110'
+              ? 'border-gray-900 dark:border-white scale-110 shadow-lg ring-2 ring-offset-2 ring-indigo-400 dark:ring-offset-gray-900'
               : 'border-transparent opacity-70 hover:opacity-100'
           } ${color.bg}`}
           title={color.name}
@@ -34,3 +35,4 @@ export function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) 
     </div>
   );
 }
+

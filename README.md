@@ -1,16 +1,19 @@
-This is a [Next.js](https://nextjs.org) template based on [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Google Keep for Prompts
 
-## Learn More
+## INTRODUCTION
 
-To learn more about Next.js, take a look at the following resources:
+This project is a Google Keep clone built using React and Firebase. It allows users to create, edit, and delete notes, as well as organize them with labels and colors. The application is designed to be responsive and user-friendly, providing a seamless experience across different devices.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## FEATURES
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Create, edit, and delete notes
+- Organize notes with labels and colors
+- Search functionality to find notes quickly
+- Responsive design for mobile and desktop
+- User authentication with Firebase
 
-## Deploy on Vercel
+## TECHNOLOGIES USED
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- React: A JavaScript library for building user interfaces
+- Firebase: A platform for building web and mobile applications, used for authentication and database
+- CSS: For styling the application

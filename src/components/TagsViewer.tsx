@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { Language, t } from '@/lib/translations';
 
 interface TagsViewerProps {
   prompts: Array<{ id: string; tags: string[] }>;
   selectedTag: string | null;
   onTagClick: (tag: string) => void;
   onClearFilter: () => void;
+  language: Language;
 }
 
 export function TagsViewer({
@@ -14,6 +16,7 @@ export function TagsViewer({
   selectedTag,
   onTagClick,
   onClearFilter,
+  language,
 }: TagsViewerProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -40,16 +43,16 @@ export function TagsViewer({
 
   return (
     <aside className="sticky top-32 h-fit">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden backdrop-blur-sm bg-white/50 dark:bg-slate-800/50">
         {/* Header */}
         <div
-          className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 cursor-pointer hover:from-blue-100 hover:to-purple-100 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-colors"
+          className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 dark:from-indigo-950/40 dark:to-purple-950/40 cursor-pointer hover:from-indigo-100/80 hover:to-purple-100/80 dark:hover:from-indigo-950/60 dark:hover:to-purple-950/60 transition-colors border-b border-slate-200 dark:border-slate-700"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-2">
             <span className="text-lg">🏷️</span>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Tags</h3>
-            <span className="text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t(language, 'tags')}</h3>
+            <span className="text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-full font-medium">
               {sortedTags.length}
             </span>
           </div>
@@ -71,14 +74,14 @@ export function TagsViewer({
             {selectedTag && (
               <button
                 onClick={onClearFilter}
-                className="w-full px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors font-medium flex items-center justify-between"
+                className="w-full px-3 py-2 text-sm bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:from-indigo-200 hover:to-purple-200 dark:hover:from-indigo-900 dark:hover:to-purple-900 transition-colors font-medium flex items-center justify-between"
               >
-                <span>✕ Clear Filter</span>
+                <span>✕ {t(language, 'clearFilter')}</span>
                 <span className="text-xs opacity-70">{selectedTag}</span>
               </button>
             )}
 
-            <div className={selectedTag ? 'border-t border-gray-200 dark:border-gray-700 pt-2' : ''}>
+            <div className={selectedTag ? 'border-t border-slate-200 dark:border-slate-700 pt-2' : ''}>
               {sortedTags.map(({ tag, count }) => {
                 const isSelected = selectedTag === tag;
                 const intensity = maxCount > 0 ? (count / maxCount) * 100 : 0;
@@ -87,36 +90,34 @@ export function TagsViewer({
                   <button
                     key={tag}
                     onClick={() => onTagClick(isSelected ? '' : tag)}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-between group ${
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-between group relative ${
                       isSelected
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'text-white shadow-lg'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-700/50'
                     }`}
                   >
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {/* Intensity bar background */}
-                      <div
-                        className={`absolute left-0 top-0 h-full rounded-lg transition-all duration-200 -z-10 ${
-                          isSelected
-                            ? 'w-full bg-blue-600'
-                            : 'bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50'
-                        }`}
-                        style={{
-                          width: isSelected ? '100%' : `${Math.max(intensity, 10)}%`,
-                        }}
-                      />
+                    {/* Intensity bar background */}
+                    <div
+                      className={`absolute left-0 top-0 h-full rounded-lg transition-all duration-200 -z-10 ${
+                        isSelected
+                          ? 'w-full bg-gradient-to-r from-indigo-500 to-purple-500'
+                          : 'bg-indigo-100/50 dark:bg-indigo-900/20 group-hover:bg-indigo-200/50 dark:group-hover:bg-indigo-900/40'
+                      }`}
+                      style={{
+                        width: isSelected ? '100%' : `${Math.max(intensity, 10)}%`,
+                      }}
+                    />
 
-                      {/* Tag name */}
-                      <span className="font-medium truncate relative z-10">
-                        #{tag}
-                      </span>
-                    </div>
+                    {/* Tag name */}
+                    <span className="font-medium truncate relative z-10">
+                      #{tag}
+                    </span>
 
                     {/* Count badge */}
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded-full ml-2 flex-shrink-0 relative z-10 ${
+                      className={`text-xs font-bold px-2.5 py-1 rounded-full ml-2 flex-shrink-0 relative z-10 ${
                         isSelected
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-white/20 text-white'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                       }`}
                     >
@@ -131,7 +132,7 @@ export function TagsViewer({
 
         {/* Footer summary */}
         {isExpanded && (
-          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
+          <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-700 text-xs text-gray-600 dark:text-gray-400">
             <div className="flex justify-between">
               <span>Total tags: <strong>{sortedTags.length}</strong></span>
               <span>Prompts: <strong>{prompts.length}</strong></span>
