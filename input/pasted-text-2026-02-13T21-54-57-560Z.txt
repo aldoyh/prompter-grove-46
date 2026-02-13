@@ -1,0 +1,668 @@
+/**
+ * Cloudflare Worker: Prompts Manager Pro
+ *
+ * A self-contained, serverless application to manage text prompts.
+ * Features: KV Storage, Dark Mode (Default), Instant Search, Clipboard Copy.
+ */
+
+export default {
+    async fetch(request, env, ctx) {
+      const { PROMPTS_KV } = env;
+      const url = new URL(request.url);
+      const path = url.pathname;
+      const method = request.method;
+  
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      };
+  
+      if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  
+      // Serve HTML
+      if (path === '/' && method === 'GET') {
+        return new Response(generateHTML(), {
+          headers: { 'Content-Type': 'text/html;charset=UTF-8' },
+        });
+      }
+  
+      // --- API Helpers ---
+      const jsonResponse = (data, status = 200) => 
+        new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      
+      const errorResponse = (msg, status = 400) => 
+        jsonResponse({ error: msg }, status);
+  
+      // --- CRITICAL CHECK: KV Binding ---
+      if (!PROMPTS_KV) {
+        return errorResponse('KV Namespace "PROMPTS_KV" is not bound. Please run the setup script.', 503);
+      }
+  
+      try {
+        // 1. CREATE
+        if (path === '/prompts' && method === 'POST') {
+          let body;
+          try { body = await request.json(); } catch { return errorResponse('Invalid JSON body'); }
+  
+          if (!body.text || typeof body.text !== 'string' || !body.text.trim()) {
+            return errorResponse('Prompt text is required');
+          }
+  
+          const newPrompt = {
+            id: crypto.randomUUID(),
+            title: body.title ? body.title.trim() : '',
+            text: body.text.trim(),
+            tags: Array.isArray(body.tags) ? body.tags.map(t => String(t).trim()).filter(t => t) : [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+  
+          await PROMPTS_KV.put(`prompt:${newPrompt.id}`, JSON.stringify(newPrompt));
+          return jsonResponse(newPrompt, 201);
+        }
+  
+        // 2. LIST
+        if (path === '/prompts' && method === 'GET') {
+          const list = await PROMPTS_KV.list({ prefix: 'prompt:' });
+          const promptPromises = list.keys.map(key => PROMPTS_KV.get(key.name));
+          const results = await Promise.all(promptPromises);
+          
+          const prompts = results
+            .map(res => { try { return JSON.parse(res); } catch { return null; } })
+            .filter(p => p !== null)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  
+          return jsonResponse({ prompts });
+        }
+  
+        // 3. DELETE & UPDATE
+        const idMatch = path.match(/^\/prompts\/([a-f0-9-]{36})$/i);
+        if (idMatch) {
+          const promptId = idMatch[1];
+          const kvKey = `prompt:${promptId}`;
+  
+          if (method === 'DELETE') {
+            await PROMPTS_KV.delete(kvKey);
+            return jsonResponse({ message: 'Deleted' });
+          }
+  
+          if (method === 'PUT') {
+            let body;
+            try { body = await request.json(); } catch { return errorResponse('Invalid JSON body'); }
+            
+            const existingJson = await PROMPTS_KV.get(kvKey);
+            if (!existingJson) return errorResponse('Prompt not found', 404);
+            
+            const existing = JSON.parse(existingJson);
+            
+            if (body.text !== undefined && (!body.text || !body.text.trim())) {
+               return errorResponse('Prompt text cannot be empty');
+            }
+  
+            const updatedPrompt = {
+              ...existing,
+              title: body.title !== undefined ? body.title.trim() : existing.title,
+              text: body.text !== undefined ? body.text.trim() : existing.text,
+              tags: body.tags !== undefined ? (Array.isArray(body.tags) ? body.tags.map(t => String(t).trim()).filter(t => t) : []) : existing.tags,
+              updatedAt: new Date().toISOString(),
+            };
+  
+            await PROMPTS_KV.put(kvKey, JSON.stringify(updatedPrompt));
+            return jsonResponse(updatedPrompt);
+          }
+        }
+  
+        return errorResponse('API Endpoint not found', 404);
+  
+      } catch (err) {
+        return jsonResponse({ error: 'Internal Server Error', details: err.message }, 500);
+      }
+    }
+  };
+  
+  function generateHTML() {
+    return `<!DOCTYPE html>
+  <html lang="en" class="antialiased">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Prompts Manager Pro</title>
+      <script>
+          if (localStorage.getItem('theme') === 'light') {
+              document.documentElement.classList.remove('dark');
+          } else {
+              document.documentElement.classList.add('dark');
+          }
+      </script>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+      <style>
+          body { font-family: 'Inter', sans-serif; }
+          ::-webkit-scrollbar { width: 8px; height: 8px; }
+          ::-webkit-scrollbar-track { background: transparent; }
+          ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+          .dark ::-webkit-scrollbar-thumb { background: #475569; }
+          ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+          .masonry-grid { column-gap: 1.5rem; }
+          .prompt-card-wrapper { break-inside: avoid; margin-bottom: 1.5rem; }
+          .trans-all { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+          .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(229, 231, 235, 0.5); }
+          .dark .glass { background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid rgba(30, 41, 59, 0.5); }
+          @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+          .toast-enter { animation: slideIn 0.3s forwards; }
+      </style>
+      <script>
+          tailwind.config = {
+              darkMode: 'class',
+              theme: { extend: { colors: { slate: { 850: '#151f32', 900: '#0f172a' } } } }
+          }
+      </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300 min-h-screen flex flex-col">
+  
+      <div id="toast-container" class="fixed top-24 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  
+      <!-- Header -->
+      <header class="sticky top-0 z-40 glass">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                  <div class="bg-gradient-to-br from-indigo-500 to-violet-600 p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+                      <i class="fa-solid fa-bolt text-white text-lg"></i>
+                  </div>
+                  <h1 class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">Prompts<span class="font-normal text-slate-500 dark:text-slate-500">Pro</span></h1>
+              </div>
+              <button id="theme-toggle" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 trans-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                  <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                  <i class="fa-solid fa-sun hidden dark:block text-lg"></i>
+              </button>
+          </div>
+      </header>
+  
+      <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <!-- Search -->
+          <div class="max-w-3xl mx-auto mb-8 relative group">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <i class="fa-solid fa-search text-slate-400 group-focus-within:text-indigo-500 trans-all"></i>
+              </div>
+              <input type="text" id="search-input" 
+                  class="w-full pl-11 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-500 rounded-xl shadow-lg shadow-slate-200/50 dark:shadow-none outline-none text-lg trans-all placeholder-slate-400 dark:placeholder-slate-500"
+                  placeholder="Search by title, content or #tags...">
+              <button id="clear-search" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hidden cursor-pointer">
+                  <i class="fa-solid fa-xmark"></i>
+              </button>
+          </div>
+  
+          <!-- Creator -->
+          <div class="max-w-3xl mx-auto mb-12">
+              <div id="creator-container" class="bg-white dark:bg-slate-900 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 overflow-hidden trans-all ring-1 ring-transparent focus-within:ring-indigo-500/50 transition-all duration-300">
+                  <form id="create-form">
+                      <div class="p-4">
+                          <input type="text" id="new-title" class="w-full bg-transparent text-lg font-bold placeholder-slate-400 outline-none mb-3 hidden text-slate-800 dark:text-slate-100 animate-fade-in" placeholder="Prompt Title">
+                          <textarea id="new-text" rows="1" class="w-full bg-transparent resize-none outline-none text-base placeholder-slate-500 dark:placeholder-slate-400 text-slate-700 dark:text-slate-300 leading-relaxed" placeholder="Type a new prompt..." required spellcheck="false"></textarea>
+                          
+                          <div id="creator-footer" class="hidden mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3 justify-between items-center animate-fade-in">
+                              <div class="relative w-full sm:w-2/3">
+                                  <span class="absolute left-3 top-2 text-slate-400 text-sm">#</span>
+                                  <input type="text" id="new-tags" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg pl-6 pr-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="Tags (comma separated)">
+                              </div>
+                              <div class="flex gap-2 w-full sm:w-auto justify-end">
+                                  <button type="button" id="cancel-create" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg trans-all">Cancel</button>
+                                  <button type="submit" id="save-btn" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg shadow-indigo-500/30 flex items-center gap-2 trans-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                      <span>Save Prompt</span>
+                                      <i class="fa-solid fa-spinner fa-spin hidden"></i>
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  </form>
+              </div>
+          </div>
+  
+          <!-- Grid -->
+          <div id="prompts-grid" class="masonry-grid columns-1 md:columns-2 lg:columns-3 gap-6 pb-20">
+              <!-- Loading -->
+              <div class="text-center py-20 col-span-full hidden" id="loading-state">
+                  <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                  <p class="mt-4 text-slate-500 text-sm font-medium">Syncing library...</p>
+              </div>
+              
+              <!-- Error -->
+              <div class="text-center py-20 col-span-full hidden" id="error-state">
+                  <div class="bg-red-100 dark:bg-red-900/30 p-4 rounded-full inline-block mb-4">
+                      <i class="fa-solid fa-triangle-exclamation text-2xl text-red-500"></i>
+                  </div>
+                  <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200">Connection Error</h3>
+                  <p class="mt-2 text-slate-500 dark:text-slate-400 max-w-md mx-auto px-4" id="error-message">Unable to connect to the database.</p>
+                  <button onclick="fetchPrompts()" class="mt-6 text-indigo-500 hover:text-indigo-400 font-medium text-sm border border-indigo-200 dark:border-indigo-800 px-4 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors">Try Again</button>
+              </div>
+          </div>
+  
+          <!-- Empty -->
+          <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20">
+              <div class="bg-slate-100 dark:bg-slate-800 p-6 rounded-full mb-4">
+                  <i class="fa-solid fa-feather text-3xl text-slate-400"></i>
+              </div>
+              <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100">No prompts found</h3>
+              <p class="text-slate-500 dark:text-slate-400 mt-2">Create your first prompt above to get started.</p>
+          </div>
+  
+      </main>
+  
+      <!-- Edit Modal -->
+      <div id="edit-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity opacity-0" id="modal-backdrop"></div>
+          <div class="fixed inset-0 z-10 overflow-y-auto">
+              <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                  <div class="relative transform overflow-hidden rounded-xl bg-white dark:bg-slate-900 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg scale-95 opacity-0" id="edit-modal-content">
+                      <form id="edit-form">
+                          <input type="hidden" id="edit-id">
+                          <div class="bg-white dark:bg-slate-900 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                              <div class="flex justify-between items-center mb-5">
+                                  <h3 class="text-lg font-bold leading-6 text-slate-900 dark:text-slate-100">Edit Prompt</h3>
+                                  <button type="button" class="text-slate-400 hover:text-slate-500 focus:outline-none" onclick="closeModal()">
+                                      <i class="fa-solid fa-xmark text-xl"></i>
+                                  </button>
+                              </div>
+                              <div class="space-y-4">
+                                  <input type="text" id="edit-title" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:border-indigo-500 transition-colors font-medium" placeholder="Title">
+                                  <textarea id="edit-text" rows="6" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-y leading-relaxed" required placeholder="Prompt content..." spellcheck="false"></textarea>
+                                  <div class="relative">
+                                      <span class="absolute left-3 top-2 text-slate-400 text-sm">#</span>
+                                      <input type="text" id="edit-tags" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg pl-6 pr-3 py-2 text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="Tags">
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="bg-slate-50 dark:bg-slate-950/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2 border-t border-slate-100 dark:border-slate-800">
+                              <button type="submit" id="update-btn" class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto trans-all items-center gap-2">
+                                  <span>Update</span>
+                                  <i class="fa-solid fa-spinner fa-spin hidden"></i>
+                              </button>
+                              <button type="button" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-900 dark:text-slate-300 shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 sm:mt-0 sm:w-auto trans-all" onclick="closeModal()">Cancel</button>
+                          </div>
+                      </form>
+                  </div>
+              </div>
+          </div>
+      </div>
+  
+      <script>
+          // --- Init ---
+          let allPrompts = [];
+          let isCreatorExpanded = false;
+  
+          const grid = document.getElementById('prompts-grid');
+          const searchInput = document.getElementById('search-input');
+          const clearSearchBtn = document.getElementById('clear-search');
+          const emptyState = document.getElementById('empty-state');
+          const loadingState = document.getElementById('loading-state');
+          const errorState = document.getElementById('error-state');
+          const errorMessage = document.getElementById('error-message');
+          
+          document.addEventListener('DOMContentLoaded', () => {
+              fetchPrompts();
+              setupTheme();
+              setupCreator();
+              setupSearch();
+          });
+  
+          // --- Core Fetch Logic with Robust Error Handling ---
+          async function fetchPrompts() {
+              loadingState.classList.remove('hidden');
+              errorState.classList.add('hidden');
+              grid.innerHTML = '';
+              grid.appendChild(loadingState);
+              grid.appendChild(errorState);
+              
+              try {
+                  const res = await fetch('/prompts');
+                  if(!res.ok) {
+                      let errorMsg = \`Server Error (\${res.status})\`;
+                      try {
+                          const contentType = res.headers.get("content-type");
+                          if (contentType && contentType.includes("application/json")) {
+                              const data = await res.json();
+                              errorMsg = data.error || errorMsg;
+                          } else {
+                              errorMsg = await res.text();
+                          }
+                      } catch (e) { /* ignore parse error */ }
+                      throw new Error(errorMsg);
+                  }
+                  const data = await res.json();
+                  allPrompts = data.prompts || [];
+                  renderPrompts();
+              } catch (err) {
+                  loadingState.classList.add('hidden');
+                  errorState.classList.remove('hidden');
+                  errorMessage.textContent = err.message.length > 200 ? err.message.substring(0, 200) + '...' : err.message;
+                  showToast('Failed to load prompts', 'error');
+              } finally {
+                  loadingState.classList.add('hidden');
+              }
+          }
+  
+          // --- UI Rendering ---
+          function renderPrompts(filter = '') {
+              grid.innerHTML = '';
+              grid.appendChild(loadingState);
+              grid.appendChild(errorState);
+  
+              const term = filter.toLowerCase();
+              const filtered = allPrompts.filter(p => 
+                  (p.title && p.title.toLowerCase().includes(term)) ||
+                  p.text.toLowerCase().includes(term) ||
+                  p.tags.some(t => t.toLowerCase().includes(term))
+              );
+  
+              if (filtered.length === 0 && allPrompts.length > 0) {
+                   const noRes = document.createElement('div');
+                   noRes.className = "col-span-full text-center py-10 text-slate-500";
+                   noRes.textContent = "No matches found.";
+                   grid.appendChild(noRes);
+                   emptyState.classList.add('hidden');
+                   return;
+              }
+  
+              if (filtered.length === 0) {
+                  emptyState.classList.remove('hidden');
+                  return;
+              }
+              emptyState.classList.add('hidden');
+  
+              filtered.forEach((p, index) => {
+                  const el = document.createElement('div');
+                  el.className = 'prompt-card-wrapper bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg hover:-translate-y-1 trans-all group relative animate-fade-in';
+                  el.style.animationDelay = \`\${index * 30}ms\`;
+                  el.dataset.id = p.id;
+                  
+                  // IMPORTANT: Quadruple escape logic applied here
+                  const tagsHtml = p.tags.map(t => {
+                     return \`<span class="inline-block bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-xs px-2.5 py-1 rounded-md mr-1.5 mb-1.5 border border-slate-100 dark:border-slate-800 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-500 trans-all" onclick="setSearch('\${safeTag(t)}')">#\${safe(t)}</span>\`;
+                  }).join('');
+                  
+                  el.innerHTML = \`
+                      <div class="flex justify-between items-start mb-3">
+                          \${p.title ? \`<h3 class="font-bold text-slate-800 dark:text-slate-100 text-lg line-clamp-1 mr-2">\${safe(p.title)}</h3>\` : '<span class="text-slate-400 text-sm italic">Untitled</span>'}
+                          <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <button onclick="openEdit('\${p.id}')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg trans-all" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                              <button onclick="deletePrompt('\${p.id}')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg trans-all" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                          </div>
+                      </div>
+                      <div class="text-slate-600 dark:text-slate-300 text-sm whitespace-pre-wrap mb-4 font-normal leading-relaxed max-h-80 overflow-y-auto custom-scrollbar select-text">\${safe(p.text)}</div>
+                      <div class="mb-3">\${tagsHtml}</div>
+                      <div class="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <span class="text-xs text-slate-400">\${new Date(p.updatedAt).toLocaleDateString()}</span>
+                          <button onclick="copyToClipboard(this, \`\${safeQuote(p.text)}\`)" class="text-xs font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 trans-all">
+                              <i class="fa-regular fa-copy"></i> <span>Copy</span>
+                          </button>
+                      </div>
+                  \`;
+                  grid.appendChild(el);
+              });
+          }
+  
+          // --- Search Logic ---
+          function setupSearch() {
+              searchInput.addEventListener('input', (e) => {
+                  const val = e.target.value;
+                  clearSearchBtn.classList.toggle('hidden', !val);
+                  renderPrompts(val);
+              });
+              clearSearchBtn.addEventListener('click', () => {
+                  searchInput.value = '';
+                  clearSearchBtn.classList.add('hidden');
+                  renderPrompts('');
+                  searchInput.focus();
+              });
+              window.setSearch = (term) => {
+                  searchInput.value = term;
+                  clearSearchBtn.classList.remove('hidden');
+                  renderPrompts(term);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+              };
+          }
+  
+          // --- Creator Logic ---
+          function setupCreator() {
+              const container = document.getElementById('creator-container');
+              const textInput = document.getElementById('new-text');
+              const titleInput = document.getElementById('new-title');
+              const footer = document.getElementById('creator-footer');
+              const cancelBtn = document.getElementById('cancel-create');
+  
+              const expand = () => {
+                  isCreatorExpanded = true;
+                  textInput.rows = 5;
+                  titleInput.classList.remove('hidden');
+                  footer.classList.remove('hidden');
+                  container.classList.add('ring-2', 'ring-indigo-500/20');
+              };
+  
+              const collapse = () => {
+                  isCreatorExpanded = false;
+                  textInput.rows = 1;
+                  titleInput.classList.add('hidden');
+                  footer.classList.add('hidden');
+                  container.classList.remove('ring-2', 'ring-indigo-500/20');
+              };
+  
+              textInput.addEventListener('focus', expand);
+              cancelBtn.addEventListener('click', () => {
+                  document.getElementById('create-form').reset();
+                  collapse();
+              });
+              
+              document.getElementById('create-form').addEventListener('submit', async (e) => {
+                  e.preventDefault();
+                  const btn = document.getElementById('save-btn');
+                  setLoading(btn, true);
+  
+                  const payload = {
+                      title: document.getElementById('new-title').value,
+                      text: document.getElementById('new-text').value,
+                      tags: document.getElementById('new-tags').value.split(',').map(t=>t.trim())
+                  };
+  
+                  try {
+                      const res = await fetch('/prompts', {
+                          method: 'POST',
+                          headers: {'Content-Type': 'application/json'},
+                          body: JSON.stringify(payload)
+                      });
+                      if(!res.ok) throw new Error((await res.json()).error || 'Failed to save');
+                      
+                      document.getElementById('create-form').reset();
+                      collapseCreator();
+                      showToast('Prompt saved', 'success');
+                      await fetchPrompts();
+                  } catch(err) {
+                      showToast(err.message, 'error');
+                  } finally {
+                      setLoading(btn, false);
+                  }
+              });
+              
+              document.addEventListener('click', (e) => {
+                  if(isCreatorExpanded && !container.contains(e.target)) {
+                      if(!textInput.value.trim()) collapse();
+                  }
+              });
+              window.collapseCreator = collapse;
+          }
+  
+          // --- Modal Logic ---
+          const modal = document.getElementById('edit-modal');
+          const modalContent = document.getElementById('edit-modal-content');
+          const modalBackdrop = document.getElementById('modal-backdrop');
+  
+          window.openEdit = (id) => {
+              const p = allPrompts.find(x => x.id === id);
+              if(!p) return;
+              document.getElementById('edit-id').value = p.id;
+              document.getElementById('edit-title').value = p.title;
+              document.getElementById('edit-text').value = p.text;
+              document.getElementById('edit-tags').value = p.tags.join(', ');
+              
+              modal.classList.remove('hidden');
+              requestAnimationFrame(() => {
+                  modalBackdrop.classList.remove('opacity-0');
+                  modalContent.classList.remove('scale-95', 'opacity-0');
+                  modalContent.classList.add('scale-100', 'opacity-100');
+              });
+          };
+  
+          window.closeModal = () => {
+              modalBackdrop.classList.add('opacity-0');
+              modalContent.classList.remove('scale-100', 'opacity-100');
+              modalContent.classList.add('scale-95', 'opacity-0');
+              setTimeout(() => modal.classList.add('hidden'), 200);
+          };
+          
+          modal.addEventListener('click', (e) => {
+              if (e.target === modal || e.target === modalBackdrop) closeModal();
+          });
+  
+          document.getElementById('edit-form').addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const btn = document.getElementById('update-btn');
+              setLoading(btn, true);
+  
+              const id = document.getElementById('edit-id').value;
+              const payload = {
+                  title: document.getElementById('edit-title').value,
+                  text: document.getElementById('edit-text').value,
+                  tags: document.getElementById('edit-tags').value.split(',').map(t=>t.trim())
+              };
+  
+              try {
+                  const res = await fetch(\`/prompts/\${id}\`, {
+                      method: 'PUT',
+                      headers: {'Content-Type': 'application/json'},
+                      body: JSON.stringify(payload)
+                  });
+                  if(!res.ok) throw new Error((await res.json()).error || 'Failed to update');
+                  
+                  closeModal();
+                  showToast('Prompt updated', 'success');
+                  await fetchPrompts();
+              } catch(err) {
+                  showToast(err.message, 'error');
+              } finally {
+                  setLoading(btn, false);
+              }
+          });
+  
+          window.deletePrompt = async (id) => {
+              if(!confirm('Are you sure you want to delete this prompt? This cannot be undone.')) return;
+              try {
+                  const res = await fetch(\`/prompts/\${id}\`, { method: 'DELETE' });
+                  if(!res.ok) throw new Error('Failed to delete');
+                  
+                  const card = document.querySelector(\`[data-id="\${id}"]\`);
+                  if(card) {
+                      card.style.transform = 'scale(0.9) translateY(10px)';
+                      card.style.opacity = '0';
+                      setTimeout(() => {
+                          allPrompts = allPrompts.filter(p => p.id !== id);
+                          renderPrompts(searchInput.value);
+                      }, 300);
+                  }
+                  showToast('Prompt deleted', 'success');
+              } catch(err) {
+                  showToast(err.message, 'error');
+              }
+          }
+  
+          // --- Security / Helpers ---
+          function safe(str) {
+              if(!str) return '';
+              const div = document.createElement('div');
+              div.textContent = str;
+              return div.innerHTML;
+          }
+          
+          // --- FIXED ESCAPING FUNCTIONS ---
+          // Generates valid JS string for use inside HTML attribute (e.g. onclick="...")
+          function safeQuote(str) {
+              if (!str) return '';
+              return str
+                  .replace(/\\\\/g, '\\\\\\\\')     // 1 backslash -> 4 backslashes (client sees 2)
+                  .replace(/\`/g, '\`')        // Backtick -> Backslash+Backtick (client sees \`)
+                  .replace(/\$/g, '\\\\$');       // Dollar -> Backslash+Dollar (client sees \$)
+          }
+  
+          function safeTag(str) {
+               if (!str) return '';
+               return str
+                  .replace(/\\\\/g, '\\\\\\\\')
+                  .replace(/'/g, "\\\\'");        // Single quote -> Backslash+Quote (client sees \')
+          }
+  
+          function setupTheme() {
+              document.getElementById('theme-toggle').addEventListener('click', () => {
+                  if(document.documentElement.classList.contains('dark')) {
+                      document.documentElement.classList.remove('dark');
+                      localStorage.setItem('theme', 'light');
+                  } else {
+                      document.documentElement.classList.add('dark');
+                      localStorage.setItem('theme', 'dark');
+                  }
+              });
+          }
+  
+          function showToast(msg, type = 'success') {
+              const container = document.getElementById('toast-container');
+              const toast = document.createElement('div');
+              const isSuccess = type === 'success';
+              const bg = isSuccess ? 'bg-indigo-600' : 'bg-red-500';
+              const icon = isSuccess ? 'fa-check' : 'fa-circle-exclamation';
+              
+              toast.className = \`\${bg} text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[300px] toast-enter text-sm font-medium pointer-events-auto\`;
+              toast.innerHTML = \`<i class="fa-solid \${icon}"></i> \${msg}\`;
+              container.appendChild(toast);
+              
+              setTimeout(() => {
+                  toast.style.opacity = '0';
+                  toast.style.transform = 'translateY(-10px)';
+                  setTimeout(() => toast.remove(), 300);
+              }, 3000);
+          }
+  
+          window.copyToClipboard = (btn, text) => {
+              navigator.clipboard.writeText(text).then(() => {
+                  const icon = btn.querySelector('i');
+                  const span = btn.querySelector('span');
+                  const originalIcon = icon.className;
+                  const originalText = span.textContent;
+                  
+                  icon.className = 'fa-solid fa-check text-green-500';
+                  span.textContent = 'Copied!';
+                  span.classList.add('text-green-500');
+                  
+                  setTimeout(() => {
+                      icon.className = originalIcon;
+                      span.textContent = originalText;
+                      span.classList.remove('text-green-500');
+                  }, 2000);
+              });
+          }
+  
+          function setLoading(btn, isLoading) {
+              const span = btn.querySelector('span');
+              const icon = btn.querySelector('.fa-spinner');
+              if(isLoading) {
+                  btn.disabled = true;
+                  span.classList.add('hidden');
+                  icon.classList.remove('hidden');
+              } else {
+                  btn.disabled = false;
+                  span.classList.remove('hidden');
+                  icon.classList.add('hidden');
+              }
+          }
+      </script>
+  </body>
+  </html>`;
+  }
