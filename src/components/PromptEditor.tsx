@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CARD_COLORS } from './ColorPicker';
 
 interface Prompt {
   id: string;
@@ -23,6 +24,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
   const [title, setTitle] = useState(prompt?.title || '');
   const [text, setText] = useState(prompt?.text || '');
   const [tags, setTags] = useState(prompt?.tags.join(', ') || '');
+  const [color, setColor] = useState(prompt?.color || 'white');
   const [isExpanded, setIsExpanded] = useState(!isCreate);
   const [saving, setSaving] = useState(false);
 
@@ -45,7 +47,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
         title: title.trim(),
         text: text.trim(),
         tags: tagArray,
-        color: undefined,
+        color: color !== 'white' ? color : undefined,
       });
 
       // Reset form if creating
@@ -53,6 +55,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
         setTitle('');
         setText('');
         setTags('');
+        setColor('white');
         setIsExpanded(false);
       }
     } finally {
@@ -65,6 +68,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
       setTitle('');
       setText('');
       setTags('');
+      setColor('white');
       setIsExpanded(false);
     } else {
       onClose();
@@ -72,9 +76,13 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
   };
 
   if (isCreate) {
+    const colorConfig = CARD_COLORS.find((c) => c.name === color) || CARD_COLORS[0];
+    const bgClass = colorConfig.bg;
+    const borderClass = colorConfig.border;
+
     return (
       <div className="max-w-3xl mx-auto">
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <form onSubmit={handleSubmit} className={`${bgClass} ${borderClass} rounded-lg shadow-md border overflow-hidden transition-all`}>
           <div className="p-4">
             {isExpanded && (
               <input
@@ -95,9 +103,9 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
             />
 
             {isExpanded && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
+              <div className="mt-4 pt-4 border-t border-gray-300 border-opacity-40 dark:border-gray-600 space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
                     Tags (comma separated)
                   </label>
                   <input
@@ -107,6 +115,27 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
                     placeholder="e.g., ai, prompting, writing"
                     className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    Card Color
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {CARD_COLORS.map((c) => (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => setColor(c.name)}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${
+                          color === c.name
+                            ? 'border-gray-900 dark:border-white scale-110 ring-2 ring-blue-400'
+                            : 'border-transparent opacity-70 hover:opacity-100'
+                        } ${c.bg}`}
+                        title={c.name}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex gap-2 justify-end">
@@ -134,9 +163,13 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
   }
 
   // Edit mode
+  const colorConfig = CARD_COLORS.find((c) => c.name === color) || CARD_COLORS[0];
+  const bgClass = colorConfig.bg;
+  const borderClass = colorConfig.border;
+
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className={`${bgClass} ${borderClass} rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border`}>
         <form onSubmit={handleSubmit} className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Prompt</h2>
@@ -188,9 +221,30 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false }: Prom
                 className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Card Color
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {CARD_COLORS.map((c) => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => setColor(c.name)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      color === c.name
+                        ? 'border-gray-900 dark:border-white scale-110 ring-2 ring-blue-400'
+                        : 'border-transparent opacity-70 hover:opacity-100'
+                    } ${c.bg}`}
+                    title={c.name}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="flex gap-2 justify-end mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex gap-2 justify-end mt-6 pt-6 border-t border-gray-300 border-opacity-40 dark:border-gray-600">
             <button
               type="button"
               onClick={onClose}
