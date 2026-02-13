@@ -6,7 +6,21 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "bash deploy.sh deploy",
+    "deploy:dry-run": "bash deploy.sh deploy --dry-run",
+    "deploy:setup": "bash deploy.sh setup",
+    "deploy:build": "bash deploy.sh build",
+    "deploy:config": "bash deploy.sh configure",
+    "deploy:staging": "bash deploy.sh deploy --env staging",
+    "deploy:health": "bash deploy.sh health",
+    "deploy:logs": "bash deploy.sh logs 50",
+    "deploy:rollback": "bash deploy.sh rollback",
+    "deploy:check": "bash pre-deploy-check.sh",
+    "wrangler:login": "npx wrangler login",
+    "wrangler:whoami": "npx wrangler whoami",
+    "wrangler:tail": "npx wrangler tail --format pretty",
+    "wrangler:list": "npx wrangler deployments list"
   },
   "dependencies": {
     "next": "^15.5.9",

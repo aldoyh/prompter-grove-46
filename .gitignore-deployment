@@ -1,0 +1,58 @@
+# Environment and Deployment Files
+# DO NOT COMMIT sensitive information or build artifacts
+
+# Environment Variables
+.env.production
+.env.staging
+.env.local
+.env.*.local
+
+# Wrangler Configuration
+.wrangler/
+wrangler-deploy-*.log
+
+# Build Artifacts
+.next/
+dist/
+build/
+out/
+
+# Deployment Logs
+deployment.log
+*.log
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.env.*.swp
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+
+# Cloudflare Specific
+.dev.vars
+cf-functions-pages-dist/
+
+# Git
+.git-credentials
+.gitconfig.local

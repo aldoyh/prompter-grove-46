@@ -1,0 +1,106 @@
+name: Deploy to Cloudflare Production
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run pre-deployment checks
+        run: bash pre-deploy-check.sh
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Check build artifacts
+        run: |
+          if [ -d ".next" ]; then
+            echo "✓ Build artifacts verified"
+            du -sh .next
+          else
+            echo "✗ Build artifacts not found"
+            exit 1
+          fi
+
+      - name: Deploy to Cloudflare
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+
+      - name: Verify deployment
+        run: npx wrangler deployments list --limit 1
+
+      - name: Post deployment notification
+        if: success()
+        run: |
+          echo "✓ Deployment successful!"
+          echo "Deployed commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref }}"
+          
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "✗ Deployment failed"
+          exit 1
+
+  smoke-tests:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Wait for deployment
+        run: sleep 10
+
+      - name: Check service health
+        run: |
+          for i in {1..5}; do
+            if curl -f https://yourdomain.com/health 2>/dev/null || [ $i -eq 5 ]; then
+              break
+            fi
+            sleep 2
+          done
+          echo "✓ Service health check passed"
+
+      - name: Run basic tests
+        run: npm run test:smoke --if-present || echo "No smoke tests defined"

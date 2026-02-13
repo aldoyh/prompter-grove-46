@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 const tajawal = Tajawal({
   variable: "--font-tajawal",
   subsets: ["latin", "arabic"],
-  weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
+  weight: ["200", "300", "400", "500", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
