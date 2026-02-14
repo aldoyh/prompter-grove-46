@@ -45,22 +45,22 @@ export const translations = {
   },
   ar: {
     // Header
-    appTitle: 'المحفوظات',
-    appDesc: 'مدير محفوظات جميل لحفظ وتنظيم أفكارك',
+    appTitle: 'الملقن',
+    appDesc: 'مدير الملقن الجميل لحفظ وتنظيم أفكارك',
     
     // Search
-    searchPlaceholder: 'البحث حسب العنوان أو المحتوى أو #الوسوم...',
+    searchPlaceholder: 'ابحث حسب العنوان أو المحتوى أو #الوسوم...',
     
     // Tags
     tags: 'الوسوم',
-    clearFilter: 'مسح المرشح',
+    clearFilter: 'مسح الفلتر',
     totalTags: 'إجمالي الوسوم',
-    prompts: 'المحفوظات',
+    prompts: 'الملقنات',
     
     // Create/Edit
-    createPrompt: 'إنشاء محفوظة جديدة',
-    promptTitle: 'عنوان المحفوظة (اختياري)',
-    promptPlaceholder: 'اكتب محفوظة جديدة...',
+    createPrompt: 'إنشاء ملقن جديد',
+    promptTitle: 'عنوان الملقن (اختياري)',
+    promptPlaceholder: 'اكتب ملقن جديد...',
     tagsLabel: 'الوسوم (مفصولة بفاصلة)',
     tagsPlaceholder: 'مثال: ذكاء اصطناعي، كتابة، إبداع',
     cardColor: 'لون البطاقة',
@@ -72,16 +72,16 @@ export const translations = {
     copied: 'تم النسخ!',
     
     // Empty states
-    noPrompts: 'لا توجد محفوظات حتى الآن',
-    noPromptsDesc: 'أنشئ محفوظتك الأولى للبدء',
+    noPrompts: 'لا توجد ملقنات حتى الآن',
+    noPromptsDesc: 'أنشئ ملقنك الأول للبدء',
     noMatches: 'لم يتم العثور على تطابقات',
-    noMatchesDesc: 'حاول تعديل شروط البحث الخاصة بك',
-    noPromptsTag: 'لا توجد محفوظات مع',
-    noPromptsTagDesc: 'حاول تعديل المرشح الخاص بك',
+    noMatchesDesc: 'حاول تعديل شروط البحث',
+    noPromptsTag: 'لا توجد ملقنات تحتوي على',
+    noPromptsTagDesc: 'حاول تعديل الفلتر',
     
     // Confirmations
-    deleteConfirm: 'حذف هذه المحفوظة؟',
-    promptRequired: 'محتوى المحفوظة مطلوب',
+    deleteConfirm: 'هل تريد حذف هذا الملقن؟',
+    promptRequired: 'محتوى الملقن مطلوب',
     
     // Misc
     langEnglish: 'English',
