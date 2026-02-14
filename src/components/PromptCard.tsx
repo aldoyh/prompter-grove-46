@@ -86,7 +86,7 @@ export function PromptCard({
         setShowActions(false);
         setShowColorPicker(false);
       }}
-      className={`group relative rounded-lg shadow-sm hover:shadow-md transition-all duration-200 p-5 border overflow-hidden ${bgClass} ${borderClass}`}
+      className={`group relative rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 p-5 border overflow-hidden ${bgClass} ${borderClass}`}
     >
       {/* Accent bar */}
       {prompt.color && prompt.color !== 'slate' && (
@@ -95,7 +95,7 @@ export function PromptCard({
 
       {/* Title */}
       {prompt.title && (
-        <h3 className="font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2 text-sm">
+        <h3 className="font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2 text-sm leading-snug">
           {prompt.title}
         </h3>
       )}
@@ -112,7 +112,7 @@ export function PromptCard({
             <button
               key={tag}
               onClick={() => onTagClick?.(tag)}
-              className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs px-2.5 py-1 rounded-full transition-all duration-150 cursor-pointer"
               title={`Click to filter by #${tag}`}
             >
               <span>#</span>
@@ -124,14 +124,14 @@ export function PromptCard({
 
       {/* Footer */}
       <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
-        <span>{date}</span>
+        <span className="font-medium">{date}</span>
 
         {/* Actions */}
-        <div className={`flex gap-1.5 transition-opacity duration-200 ${showActions ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`flex gap-1.5 transition-all duration-200 ${showActions ? 'opacity-100' : 'opacity-0'}`}>
           <button
             onClick={handleCopy}
             title={t(language, 'copy')}
-            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-all duration-150 hover:scale-110"
           >
             {copied ? '✓' : '📋'}
           </button>
@@ -141,13 +141,13 @@ export function PromptCard({
             <button
               onClick={() => setShowColorPicker(!showColorPicker)}
               title={t(language, 'cardColor')}
-              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-all duration-150 hover:scale-110"
             >
               🎨
             </button>
 
             {showColorPicker && (
-              <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-3 z-50">
+              <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 p-3 z-50">
                 <div className="flex gap-2 flex-wrap w-40 justify-center">
                   {CARD_COLORS.map((color) => (
                     <button
@@ -169,14 +169,14 @@ export function PromptCard({
           <button
             onClick={() => onEdit(prompt.id)}
             title={t(language, 'edit')}
-            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-all duration-150 hover:scale-110"
           >
             ✏️
           </button>
           <button
             onClick={handleDelete}
             title={t(language, 'delete')}
-            className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded transition-colors"
+            className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md transition-all duration-150 hover:scale-110"
           >
             🗑️
           </button>
