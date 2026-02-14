@@ -42,38 +42,24 @@ export function TagsViewer({
   }
 
   return (
-    <aside className="sticky top-20 h-fit">
-      <div className="rounded-lg border overflow-hidden" style={{ 
-        backgroundColor: 'var(--bg-surface)',
-        borderColor: 'var(--border-color)',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
+    <aside className="sticky top-32 h-fit">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
         {/* Header */}
         <div
-          className="flex items-center justify-between p-3 cursor-pointer transition-colors"
-          style={{
-            borderBottom: '1px solid var(--border-color)',
-            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05))'
-          }}
+          className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/40 cursor-pointer hover:from-indigo-100 hover:to-blue-100 dark:hover:from-indigo-950/60 dark:hover:to-blue-950/60 transition-colors border-b border-slate-200 dark:border-slate-800"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-2">
             <span className="text-lg">🏷️</span>
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-              {t(language, 'tags')}
-            </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{
-              backgroundColor: 'var(--primary)',
-              color: 'white'
-            }}>
+            <h3 className="font-semibold text-slate-900 dark:text-white text-sm">{t(language, 'tags')}</h3>
+            <span className="text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
               {sortedTags.length}
             </span>
           </div>
           <svg
-            className={`w-4 h-4 transition-transform ${
+            className={`w-4 h-4 text-slate-600 dark:text-slate-400 transition-transform ${
               isExpanded ? 'rotate-180' : ''
             }`}
-            style={{ color: 'var(--text-secondary)' }}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -88,18 +74,14 @@ export function TagsViewer({
             {selectedTag && (
               <button
                 onClick={onClearFilter}
-                className="w-full px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between font-medium text-white"
-                style={{
-                  background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                  boxShadow: 'var(--shadow-sm)'
-                }}
+                className="w-full px-3 py-2 text-sm bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors font-medium flex items-center justify-between"
               >
                 <span>✕ {t(language, 'clearFilter')}</span>
-                <span className="text-xs opacity-80">{selectedTag}</span>
+                <span className="text-xs opacity-70">{selectedTag}</span>
               </button>
             )}
 
-            <div className={selectedTag ? 'border-t pt-1.5' : ''} style={{ borderColor: 'var(--border-color)' }}>
+            <div className={selectedTag ? 'border-t border-slate-200 dark:border-slate-800 pt-1.5' : ''}>
               {sortedTags.map(({ tag, count }) => {
                 const isSelected = selectedTag === tag;
                 const intensity = maxCount > 0 ? (count / maxCount) * 100 : 0;
@@ -108,21 +90,18 @@ export function TagsViewer({
                   <button
                     key={tag}
                     onClick={() => onTagClick(isSelected ? '' : tag)}
-                    className="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-between group relative"
-                    style={{
-                      color: isSelected ? 'white' : 'var(--text-primary)',
-                      background: isSelected ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'transparent',
-                      boxShadow: isSelected ? 'var(--shadow-md)' : 'none'
-                    }}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-between group relative ${
+                      isSelected
+                        ? 'text-white bg-indigo-600 shadow-md'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
                   >
                     {/* Intensity bar background */}
                     {!isSelected && (
                       <div
-                        className="absolute left-0 top-0 h-full rounded-lg transition-all duration-200 -z-10"
+                        className="absolute left-0 top-0 h-full rounded-lg bg-indigo-100 dark:bg-indigo-900/20 transition-all duration-200 -z-10"
                         style={{
                           width: `${Math.max(intensity, 10)}%`,
-                          backgroundColor: 'var(--primary)',
-                          opacity: 0.1
                         }}
                       />
                     )}
@@ -134,11 +113,11 @@ export function TagsViewer({
 
                     {/* Count badge */}
                     <span
-                      className="text-xs font-semibold px-2 py-1 rounded-full ml-2 flex-shrink-0 relative z-10"
-                      style={{
-                        backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.2)' : 'var(--bg-secondary)',
-                        color: isSelected ? 'white' : 'var(--text-secondary)'
-                      }}
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-2 flex-shrink-0 relative z-10 ${
+                        isSelected
+                          ? 'bg-indigo-700 text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                      }`}
                     >
                       {count}
                     </span>
@@ -151,11 +130,7 @@ export function TagsViewer({
 
         {/* Footer summary */}
         {isExpanded && (
-          <div className="px-3 py-2.5 text-xs" style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderTop: '1px solid var(--border-color)',
-            color: 'var(--text-secondary)'
-          }}>
+          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
             <div className="flex justify-between">
               <span>{t(language, 'totalTags')}: <strong>{sortedTags.length}</strong></span>
               <span>{t(language, 'prompts')}: <strong>{prompts.length}</strong></span>
