@@ -18,14 +18,12 @@
   }
 
   /* English (default) - System fonts */
-  html:lang(en),
-  html:lang(en) body {
+  html:lang(en) {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
   /* Arabic - Tajawal font */
-  html:lang(ar),
-  html:lang(ar) body {
+  html:lang(ar) {
     font-family: var(--font-tajawal), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     direction: rtl;
   }
@@ -44,9 +42,12 @@
 }
 
 @layer components {
-  /* Arabic text anywhere - always use Tajawal */
-  :is([lang="ar"], [dir="rtl"]) {
-    font-family: var(--font-tajawal), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  /* Arabic text with Tajawal font - highest priority */
+  *:lang(ar),
+  [lang="ar"],
+  [dir="rtl"],
+  .arabic-text {
+    font-family: var(--font-tajawal), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
   }
 
   /* Scrollbar styling */
@@ -104,6 +105,14 @@
     outline: 2px solid #6366f1;
     outline-offset: 2px;
   }
+
+  /* Ensure Arabic text always uses Tajawal */
+  .arabic-text,
+  [aria-label*="عربي"],
+  [aria-label*="العربية"] {
+    font-family: var(--font-tajawal), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+  }
 }
+
 
 
