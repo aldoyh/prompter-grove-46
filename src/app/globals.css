@@ -138,10 +138,7 @@
   *[lang="ar"],
   *[dir="rtl"],
   html:lang(en) .arabic-text,
-  html:lang(en) [data-language="ar"],
-  html:lang(en) span:has-text([\u0600-\u06FF]),
-  button:has-text([\u0600-\u06FF]),
-  span:has-text([\u0600-\u06FF]) {
+  html:lang(en) [data-language="ar"] {
     font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif !important;
   }
 
@@ -152,7 +149,8 @@
 
   .lang-ar,
   [data-lang="ar"],
-  .arabic {
+  .arabic,
+  .arabic-text {
     font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif !important;
   }
 
@@ -300,8 +298,7 @@
   .transition-slow { transition: all 0.5s ease; }
 
   /* ===== Safe Arabic Text Display ===== */
-  .safe-arabic,
-  [role="button"]:has-text([\u0600-\u06FF]) {
+  .safe-arabic {
     font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif !important;
   }
 
