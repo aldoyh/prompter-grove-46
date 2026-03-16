@@ -145,6 +145,112 @@
 }
 
 @layer components {
+  /* ===== Animated Header ===== */
+  .animated-header {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .animated-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.03) 25%,
+      rgba(168, 85, 247, 0.05) 50%,
+      rgba(99, 102, 241, 0.03) 75%,
+      transparent 100%
+    );
+    animation: headerShimmer 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes headerShimmer {
+    0%, 100% {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .header-logo {
+    position: relative;
+    animation: logoFloat 6s ease-in-out infinite;
+  }
+
+  @keyframes logoFloat {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-2px) scale(1.02);
+    }
+  }
+
+  .header-logo::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+    filter: blur(8px);
+  }
+
+  .header-logo:hover::after {
+    opacity: 1;
+  }
+
+  .header-title {
+    background: linear-gradient(
+      135deg,
+      #6366f1 0%,
+      #8b5cf6 50%,
+      #6366f1 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 4s ease-in-out infinite;
+  }
+
+  @keyframes titleGradient {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .header-subtitle {
+    animation: subtitleFade 4s ease-in-out infinite;
+    animation-delay: 0.5s;
+  }
+
+  @keyframes subtitleFade {
+    0%, 100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
   /* ===== Automatic Text Direction Classes ===== */
   
   /* Primary Arabic text handler - applies Tajawal font */

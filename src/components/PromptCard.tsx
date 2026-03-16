@@ -113,13 +113,21 @@ export function PromptCard({
 
       {/* Title */}
       {prompt.title && (
-        <h3 className={`font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2 text-sm leading-snug ${titleDirClass}`}>
+        <h3 
+          className={`font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2 text-sm leading-snug ${titleDirClass}`}
+          dir={titleAnalysis.isArabic ? 'rtl' : titleAnalysis.containsArabic ? 'auto' : undefined}
+          lang={titleAnalysis.isArabic ? 'ar' : undefined}
+        >
           {prompt.title}
         </h3>
       )}
 
       {/* Text */}
-      <p className={`text-slate-700 dark:text-slate-300 text-sm line-clamp-6 whitespace-pre-wrap mb-3 leading-relaxed ${textDirClass}`}>
+      <p 
+        className={`text-slate-700 dark:text-slate-300 text-sm line-clamp-6 whitespace-pre-wrap mb-3 leading-relaxed ${textDirClass}`}
+        dir={textAnalysis.isArabic ? 'rtl' : textAnalysis.containsArabic ? 'auto' : undefined}
+        lang={textAnalysis.isArabic ? 'ar' : undefined}
+      >
         {prompt.text}
       </p>
 

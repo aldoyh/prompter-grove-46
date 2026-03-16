@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Language, t } from '@/lib/translations';
+import { analyzeText } from '@/lib/language-detection';
 
 interface TagsViewerProps {
   prompts: Array<{ id: string; tags: string[] }>;
@@ -77,7 +78,7 @@ export function TagsViewer({
                 className="w-full px-3 py-2 text-sm bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-all duration-200 font-medium flex items-center justify-between"
               >
                 <span>✕ {t(language, 'clearFilter')}</span>
-                <span className="text-xs opacity-70">{selectedTag}</span>
+                <span className="text-xs opacity-70">#{selectedTag}</span>
               </button>
             )}
 
@@ -85,6 +86,8 @@ export function TagsViewer({
               {sortedTags.map(({ tag, count }) => {
                 const isSelected = selectedTag === tag;
                 const intensity = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                const tagAnalysis = analyzeText(tag);
+                const isArabicTag = tagAnalysis.isArabic || tagAnalysis.containsArabic;
 
                 return (
                   <button
@@ -107,7 +110,10 @@ export function TagsViewer({
                     )}
 
                     {/* Tag name */}
-                    <span className="font-medium text-sm truncate relative z-10">
+                    <span 
+                      className={`font-medium text-sm truncate relative z-10 ${isArabicTag ? 'font-arabic dir-rtl' : ''}`}
+                      dir={isArabicTag ? 'rtl' : 'ltr'}
+                    >
                       #{tag}
                     </span>
 

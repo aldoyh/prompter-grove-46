@@ -9,16 +9,17 @@ interface LanguageSwitcherProps {
 
 export function LanguageSwitcher({ language, onLanguageChange }: LanguageSwitcherProps) {
   return (
-    <div className="flex items-center gap-1 bg-gradient-to-r from-indigo-50/50 to-pink-50/50 dark:from-indigo-950/30 dark:to-pink-950/30 rounded-lg p-1 border border-indigo-200/30 dark:border-indigo-800/30">
+    <div className="flex items-center gap-1 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-lg p-1 border border-indigo-200/30 dark:border-indigo-800/30 shadow-sm">
       {(['en', 'ar'] as const).map((lang) => (
         <button
           key={lang}
           onClick={() => onLanguageChange(lang)}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-all duration-200 ${
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-all duration-300 ${
             language === lang
-              ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-          }`}
+              ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-md scale-105'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-slate-800/50'
+          } ${lang === 'ar' ? 'font-arabic' : ''}`}
+          dir={lang === 'ar' ? 'rtl' : 'ltr'}
         >
           {lang === 'en' ? translations.en.langEnglish : translations.ar.langArabic}
         </button>
