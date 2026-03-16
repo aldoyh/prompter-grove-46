@@ -78,6 +78,7 @@
   }
 
   /* ===== Language-Based Font Selection ===== */
+  
   /* English mode - system fonts for optimal performance */
   html:lang(en) {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -130,27 +131,69 @@
     background-color: var(--color-primary);
     color: white;
   }
+
+  /* ===== Input Placeholder ===== */
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 0.6;
+  }
+
+  html:lang(ar) input::placeholder,
+  html:lang(ar) textarea::placeholder {
+    font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif;
+  }
 }
 
 @layer components {
-  /* ===== Arabic Text Universal Handler ===== */
-  /* This ensures ANY Arabic text uses Tajawal, regardless of page language */
-  *[lang="ar"],
-  *[dir="rtl"],
-  html:lang(en) .arabic-text,
-  html:lang(en) [data-language="ar"] {
+  /* ===== Automatic Text Direction Classes ===== */
+  
+  /* Primary Arabic text handler - applies Tajawal font */
+  .text-arabic {
+    font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif !important;
+    direction: rtl;
+    text-align: right;
+  }
+
+  /* Mixed content - uses auto direction */
+  .text-mixed {
+    unicode-bidi: plaintext;
+  }
+
+  /* English text - explicit LTR */
+  .text-english {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    direction: ltr;
+    text-align: left;
+  }
+
+  /* Font-specific classes for Arabic */
+  .font-arabic {
     font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif !important;
   }
 
-  /* For Arabic text in English context - explicit handling */
-  html:lang(en) {
-    --font-stack-ar: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif;
+  /* Direction utilities */
+  .dir-rtl {
+    direction: rtl;
+    text-align: right;
   }
 
+  .dir-ltr {
+    direction: ltr;
+    text-align: left;
+  }
+
+  .dir-auto {
+    direction: auto;
+    unicode-bidi: plaintext;
+  }
+
+  /* ===== Legacy Support Classes ===== */
+  .arabic-text,
   .lang-ar,
   [data-lang="ar"],
   .arabic,
-  .arabic-text {
+  *[lang="ar"],
+  *[dir="rtl"] {
     font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif !important;
   }
 
@@ -273,6 +316,11 @@
   .tracking-tight { letter-spacing: var(--letter-spacing-tight); }
   .tracking-normal { letter-spacing: var(--letter-spacing-normal); }
   .tracking-loose { letter-spacing: var(--letter-spacing-loose); }
+
+  /* ===== Safe Arabic Text Display ===== */
+  .safe-arabic {
+    font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif !important;
+  }
 }
 
 @layer utilities {
@@ -297,11 +345,6 @@
   .transition-fast { transition: all 0.15s ease; }
   .transition-slow { transition: all 0.5s ease; }
 
-  /* ===== Safe Arabic Text Display ===== */
-  .safe-arabic {
-    font-family: var(--font-tajawal), 'Traditional Arabic', 'Simplified Arabic', Arial, sans-serif !important;
-  }
-
   /* Mobile-first responsive utilities */
   @media (max-width: 640px) {
     .sm\:text-sm { font-size: var(--font-size-sm); }
@@ -319,5 +362,3 @@
     }
   }
 }
-
-

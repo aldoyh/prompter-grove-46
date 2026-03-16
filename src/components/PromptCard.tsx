@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PromptEditor } from './PromptEditor';
 import { CARD_COLORS } from './ColorPicker';
 import { Language, t } from '@/lib/translations';
+import { analyzeText } from '@/lib/language-detection';
 
 interface Prompt {
   id: string;
@@ -37,6 +38,10 @@ export function PromptCard({
   const [showActions, setShowActions] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Automatically detect text direction for content
+  const textAnalysis = useMemo(() => analyzeText(prompt.text), [prompt.text]);
+  const titleAnalysis = useMemo(() => analyzeText(prompt.title), [prompt.title]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(prompt.text);
@@ -79,6 +84,19 @@ export function PromptCard({
   const borderClass = colorConfig?.border || CARD_COLORS[0].border;
   const accentClass = colorConfig?.accent || '';
 
+  // Determine text direction classes based on content analysis
+  const textDirClass = textAnalysis.isArabic 
+    ? 'dir-rtl font-arabic' 
+    : textAnalysis.containsArabic 
+      ? 'dir-auto' 
+      : '';
+  
+  const titleDirClass = titleAnalysis.isArabic 
+    ? 'dir-rtl font-arabic' 
+    : titleAnalysis.containsArabic 
+      ? 'dir-auto' 
+      : '';
+
   return (
     <div
       onMouseEnter={() => setShowActions(true)}
@@ -95,13 +113,13 @@ export function PromptCard({
 
       {/* Title */}
       {prompt.title && (
-        <h3 className="font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2 text-sm leading-snug">
+        <h3 className={`font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2 text-sm leading-snug ${titleDirClass}`}>
           {prompt.title}
         </h3>
       )}
 
       {/* Text */}
-      <p className="text-slate-700 dark:text-slate-300 text-sm line-clamp-6 whitespace-pre-wrap mb-3 leading-relaxed">
+      <p className={`text-slate-700 dark:text-slate-300 text-sm line-clamp-6 whitespace-pre-wrap mb-3 leading-relaxed ${textDirClass}`}>
         {prompt.text}
       </p>
 

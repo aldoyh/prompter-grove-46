@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CARD_COLORS } from './ColorPicker';
 import { Language, t } from '@/lib/translations';
+import { analyzeText } from '@/lib/language-detection';
 
 interface Prompt {
   id: string;
@@ -29,6 +30,10 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
   const [color, setColor] = useState(prompt?.color || 'slate');
   const [isExpanded, setIsExpanded] = useState(!isCreate);
   const [saving, setSaving] = useState(false);
+
+  // Automatically detect direction for text content
+  const textAnalysis = useMemo(() => analyzeText(text), [text]);
+  const titleAnalysis = useMemo(() => analyzeText(title), [title]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +97,8 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t(language, 'promptTitle')}
-                className="w-full mb-3 text-lg font-semibold bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                className={`w-full mb-3 text-lg font-semibold bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${titleAnalysis.isArabic ? 'dir-rtl font-arabic' : ''}`}
+                dir={titleAnalysis.isArabic ? 'rtl' : titleAnalysis.containsArabic ? 'auto' : 'ltr'}
               />
             )}
             <textarea
@@ -101,7 +107,8 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
               onFocus={() => setIsExpanded(true)}
               placeholder={t(language, 'promptPlaceholder')}
               rows={isExpanded ? 5 : 1}
-              className="w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 leading-relaxed"
+              className={`w-full bg-transparent border-none outline-none resize-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 leading-relaxed ${textAnalysis.isArabic ? 'dir-rtl font-arabic' : ''}`}
+              dir={textAnalysis.isArabic ? 'rtl' : textAnalysis.containsArabic ? 'auto' : 'ltr'}
             />
 
             {isExpanded && (
@@ -196,7 +203,8 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t(language, 'promptTitle')}
-                className="w-full px-3 py-2 bg-gray-100 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                className={`w-full px-3 py-2 bg-gray-100 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 ${titleAnalysis.isArabic ? 'dir-rtl font-arabic' : ''}`}
+                dir={titleAnalysis.isArabic ? 'rtl' : titleAnalysis.containsArabic ? 'auto' : 'ltr'}
               />
             </div>
 
@@ -209,7 +217,8 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
                 onChange={(e) => setText(e.target.value)}
                 placeholder={t(language, 'promptPlaceholder')}
                 rows={8}
-                className="w-full px-3 py-2 bg-gray-100 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 resize-vertical"
+                className={`w-full px-3 py-2 bg-gray-100 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 resize-vertical ${textAnalysis.isArabic ? 'dir-rtl font-arabic' : ''}`}
+                dir={textAnalysis.isArabic ? 'rtl' : textAnalysis.containsArabic ? 'auto' : 'ltr'}
               />
             </div>
 

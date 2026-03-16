@@ -1,5 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
+import { analyzeText } from '@/lib/language-detection';
+
 interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
@@ -11,11 +14,16 @@ export function SearchBar({ value, onChange, language = 'en' }: SearchBarProps) 
     ? 'ابحث عن طريق العنوان أو المحتوى أو #علامات...'
     : 'Search by title, content or #tags...';
 
+  // Auto-detect search input direction
+  const searchAnalysis = useMemo(() => analyzeText(value), [value]);
+  const inputDir = searchAnalysis.isArabic ? 'rtl' : searchAnalysis.containsArabic ? 'auto' : 'ltr';
+  const inputClass = searchAnalysis.isArabic ? 'font-arabic' : '';
+
   return (
     <div className="sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-500">
+          <div className={`absolute inset-y-0 ${searchAnalysis.isArabic ? 'right-0 pr-3' : 'left-0 pl-3'} flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-500`}>
             <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -25,12 +33,13 @@ export function SearchBar({ value, onChange, language = 'en' }: SearchBarProps) 
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full pl-10 pr-10 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:shadow-lg transition-all duration-200"
+            dir={inputDir}
+            className={`w-full ${searchAnalysis.isArabic ? 'pr-10 pl-10' : 'pl-10 pr-10'} py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:shadow-lg transition-all duration-200 ${inputClass}`}
           />
           {value && (
             <button
               onClick={() => onChange('')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-150"
+              className={`absolute inset-y-0 ${searchAnalysis.isArabic ? 'left-0 pl-3' : 'right-0 pr-3'} flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-150`}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
