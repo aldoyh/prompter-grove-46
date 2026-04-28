@@ -7,98 +7,90 @@ import { SearchBar } from '@/components/SearchBar';
 import { TagsViewer } from '@/components/TagsViewer';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { translations, Language, t } from '@/lib/translations';
-
-interface Prompt {
-  id: string;
-  title: string;
-  text: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  color?: string;
-}
+import { usePrompts } from '@/hooks/usePrompts';
+import { useAuth } from '@/hooks/useAuth';
+import { Prompt } from '@/domain/models/Prompt';
 
 export default function Home() {
-  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const { prompts, loading, error, create, update, remove, refetch } = usePrompts({
+    search: '',
+    tags: [],
+    limit: 20,
+    enableRealtime: true,
+  });
+
   const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [language, setLanguage] = useState<Language>('en');
   const [mounted, setMounted] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
 
-  useEffect(() => {
-    setMounted(true);
-    const savedLanguage = localStorage.getItem('language') as Language | null;
-    const lang = savedLanguage || 'en';
-    setLanguage(lang);
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    fetchPrompts();
-  }, []);
-
-  useEffect(() => {
-    filterPrompts(searchTerm, selectedTag);
-  }, [prompts, searchTerm, selectedTag]);
-
-  const fetchPrompts = async () => {
+  // Handle authentication UI
+  const handleLogin = async () => {
     try {
-      setLoading(true);
-      const data = JSON.parse(localStorage.getItem('prompts') || '[]');
-      setPrompts(data);
-    } catch (error) {
-      console.error('Failed to fetch prompts:', error);
-    } finally {
-      setLoading(false);
+      await signInWithGoogle();
+      refetch();
+    } catch (err) {
+      console.error('Login failed:', err);
     }
   };
 
-  const filterPrompts = (term: string, tag: string | null) => {
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  };
+
+  // Filter prompts based on search and tags
+  useEffect(() => {
     let filtered = prompts;
 
-    // Filter by tag if selected
-    if (tag) {
-      filtered = filtered.filter(p => p.tags.includes(tag));
+    // Filter by tag
+    if (selectedTag) {
+      filtered = filtered.filter(p => p.tags.includes(selectedTag));
     }
 
     // Filter by search term
-    if (term) {
+    if (searchTerm) {
       filtered = filtered.filter(p =>
-        p.title.toLowerCase().includes(term.toLowerCase()) ||
-        p.text.toLowerCase().includes(term.toLowerCase()) ||
-        p.tags.some(t => t.toLowerCase().includes(term.toLowerCase()))
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
     setFilteredPrompts(filtered);
+  }, [prompts, searchTerm, selectedTag]);
+
+  // Handle create/update/delete operations
+  const handleAddPrompt = async (promptData: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const newPrompt = await create(promptData);
+      console.log('Prompt created:', newPrompt);
+    } catch (err: any) {
+      console.error('Failed to create prompt:', err);
+    }
   };
 
-  const handleAddPrompt = (prompt: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newPrompt: Prompt = {
-      ...prompt,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const updated = [newPrompt, ...prompts];
-    setPrompts(updated);
-    localStorage.setItem('prompts', JSON.stringify(updated));
+  const handleUpdatePrompt = async (id: string, updates: Partial<Prompt>) => {
+    try {
+      await update(id, updates);
+      setEditingId(null);
+    } catch (err: any) {
+      console.error('Failed to update prompt:', err);
+    }
   };
 
-  const handleUpdatePrompt = (id: string, updates: Partial<Prompt>) => {
-    const updated = prompts.map(p =>
-      p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-    );
-    setPrompts(updated);
-    localStorage.setItem('prompts', JSON.stringify(updated));
-    setEditingId(null);
-  };
-
-  const handleDeletePrompt = (id: string) => {
-    const updated = prompts.filter(p => p.id !== id);
-    setPrompts(updated);
-    localStorage.setItem('prompts', JSON.stringify(updated));
+  const handleDeletePrompt = async (id: string) => {
+    try {
+      await remove(id);
+    } catch (err: any) {
+      console.error('Failed to delete prompt:', err);
+    }
   };
 
   const handleTagClick = (tag: string) => {
@@ -107,11 +99,13 @@ export default function Home() {
   };
 
   const handleLanguageChange = (lang: Language) => {
-    setLanguage(lang);
-    localStorage.setItem('language', lang);
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    setCurrentLanguage(lang);
   };
+
+  // Initialize mounted state
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!mounted) return null;
 
@@ -126,32 +120,47 @@ export default function Home() {
             </div>
             <div>
               <h1 className="header-title text-xl font-bold">
-                {t(language, 'appTitle')}
+                {t(currentLanguage, 'appTitle')}
               </h1>
               <p className="header-subtitle text-xs text-slate-500 dark:text-slate-400 font-medium">
-                {t(language, 'appDesc')}
+                {t(currentLanguage, 'appDesc')}
               </p>
             </div>
           </div>
-          <LanguageSwitcher language={language} onLanguageChange={handleLanguageChange} />
+          <LanguageSwitcher language={currentLanguage} onLanguageChange={handleLanguageChange} />
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
+            >
+              {t(currentLanguage, 'logout')}
+            </button>
+          ) : (
+            <button
+              onClick={handleLogin}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
+            >
+              {t(currentLanguage, 'login')}
+            </button>
+          )}
         </div>
       </header>
 
       {/* Search Bar */}
-      <SearchBar value={searchTerm} onChange={setSearchTerm} language={language} />
+      <SearchBar value={searchTerm} onChange={setSearchTerm} language={currentLanguage} />
 
       {/* Main Layout */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left Sidebar - Tags Viewer */}
           <div className="lg:col-span-1 order-2 lg:order-1">
-            {!loading && (
+            {!authLoading && (
               <TagsViewer
                 prompts={prompts}
                 selectedTag={selectedTag}
                 onTagClick={handleTagClick}
                 onClearFilter={() => setSelectedTag(null)}
-                language={language}
+                language={currentLanguage}
               />
             )}
           </div>
@@ -160,7 +169,12 @@ export default function Home() {
           <div className="lg:col-span-3 order-1 lg:order-2">
             {/* Create New Prompt */}
             <div className="mb-8">
-              <PromptEditor onSave={handleAddPrompt} onClose={() => {}} isCreate={true} language={language} />
+              <PromptEditor
+                onSave={handleAddPrompt}
+                onClose={() => {}}
+                isCreate={true}
+                language={currentLanguage}
+              />
             </div>
 
             {/* Prompts Grid */}
@@ -173,24 +187,24 @@ export default function Home() {
                 <div className="text-5xl mb-4">📝</div>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
                   {prompts.length === 0
-                    ? t(language, 'noPrompts')
+                    ? t(currentLanguage, 'noPrompts')
                     : selectedTag
-                    ? `${t(language, 'noPromptsTag')} #${selectedTag}`
-                    : t(language, 'noMatches')}
+                    ? `${t(currentLanguage, 'noPromptsTag')} #${selectedTag}`
+                    : t(currentLanguage, 'noMatches')}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 mb-6">
                   {prompts.length === 0
-                    ? t(language, 'noPromptsDesc')
+                    ? t(currentLanguage, 'noPromptsDesc')
                     : selectedTag
-                    ? t(language, 'noPromptsTagDesc')
-                    : t(language, 'noMatchesDesc')}
+                    ? t(currentLanguage, 'noPromptsTagDesc')
+                    : t(currentLanguage, 'noMatchesDesc')}
                 </p>
                 {selectedTag && (
                   <button
                     onClick={() => setSelectedTag(null)}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
                   >
-                    {t(language, 'clearFilter')}
+                    {t(currentLanguage, 'clearFilter')}
                   </button>
                 )}
               </div>
@@ -205,7 +219,7 @@ export default function Home() {
                     isEditing={editingId === prompt.id}
                     onSaveEdit={handleUpdatePrompt}
                     onTagClick={handleTagClick}
-                    language={language}
+                    language={currentLanguage}
                   />
                 ))}
               </div>
