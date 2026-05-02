@@ -1,7 +1,7 @@
 // Custom Hook for Prompt Management with Real-time Updates
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { promptRepository } from '@/data/repository';
-import { Prompt } from '@/domain/models/Prompt';
+import { Prompt, PromptService } from '@/domain/models/Prompt';
 import { useAuth } from './useAuth';
 
 interface UsePromptsOptions {
@@ -51,11 +51,11 @@ export function usePrompts(options: UsePromptsOptions = {}) {
 
   useEffect(() => {
     if (user) {
-      fetchPrompts(user.id, options);
+      fetchPrompts(user.uid || user.id || '', options);
     }
-  }, [user?.id, JSON.stringify(options), fetchPrompts]);
+  }, [user?.uid, JSON.stringify(options), fetchPrompts]);
 
-  const create = useCallback(async (data: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const create = useCallback(async (data: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
@@ -66,14 +66,14 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       
       PromptService.validateCreate(validatedData);
       
-      const newPrompt = await promptRepository.create(validatedData, user.id);
+      const newPrompt = await promptRepository.create(validatedData, user.uid || user.id || '');
       setPrompts(prev => [newPrompt, ...prev]);
       return newPrompt;
     } catch (err: any) {
       setError(err.message);
       throw err;
     }
-  }, [user]);
+  }, [user, promptRepository]);
 
   const update = useCallback(async (id: string, data: Partial<Prompt>) => {
     if (!user) throw new Error('User not authenticated');
@@ -95,7 +95,7 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       
       setPrompts(prev => prev.map(p => 
         p.id === id 
-          ? { ...p, ...updatedData, updatedAt: new Date() }
+          ? { ...p, ...updatedData, updatedAt: new Date().toISOString() }
           : p
       ));
     } catch (err: any) {
@@ -123,6 +123,6 @@ export function usePrompts(options: UsePromptsOptions = {}) {
     create,
     update,
     remove,
-    refetch: () => user && fetchPrompts(user.id, options),
+    refetch: () => user && fetchPrompts(user.uid || user.id || '', options),
   };
 }

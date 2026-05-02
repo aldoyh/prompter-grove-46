@@ -2,26 +2,17 @@
 
 import { useState, useMemo } from 'react';
 import { PromptEditor } from './PromptEditor';
-import { CARD_COLORS } from './ColorPicker';
+import { CARD_COLORS, ColorName } from './ColorPicker';
 import { Language, t } from '@/lib/translations';
 import { analyzeText } from '@/lib/language-detection';
-
-interface Prompt {
-  id: string;
-  title: string;
-  text: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  color?: string;
-}
+import { Prompt as PromptType } from '@/domain/models/Prompt';
 
 interface PromptCardProps {
-  prompt: Prompt;
+  prompt: PromptType;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   isEditing: boolean;
-  onSaveEdit: (id: string, updates: Partial<Prompt>) => void;
+  onSaveEdit: (id: string, updates: Partial<PromptType>) => void;
   onTagClick?: (tag: string) => void;
   language?: Language;
 }
@@ -55,7 +46,7 @@ export function PromptCard({
     }
   };
 
-  const handleColorChange = (color: string) => {
+  const handleColorChange = (color: ColorName) => {
     onSaveEdit(prompt.id, { color });
     setShowColorPicker(false);
   };
@@ -178,7 +169,7 @@ export function PromptCard({
                   {CARD_COLORS.map((color) => (
                     <button
                       key={color.name}
-                      onClick={() => handleColorChange(color.name)}
+                      onClick={() => handleColorChange(color.name as ColorName)}
                       className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-110 ${
                         prompt.color === color.name
                           ? 'border-slate-900 dark:border-white scale-110 ring-2 ring-indigo-400'

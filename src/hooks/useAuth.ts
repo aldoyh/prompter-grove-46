@@ -1,40 +1,71 @@
 /**
- * Authentication Hook with Firebase Integration
+ * Simplified Authentication Hook (replaces Firebase Auth)
+ * Uses localStorage for simple user persistence
  */
-import { useState, useEffect, useContext, createContext } from 'react';
-import { auth } from '@/lib/firebase/config';
-import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect, useContext, createContext, ReactNode } from 'react';
 
-interface AuthContextType {
-  user: any;
-  loading: boolean;
+interface User {
+  uid: string;
+  id: string;  // Add id alias for uid
+  email: string;
+  displayName?: string;
 }
 
-const AuthContext: any = createContext(null);
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string) => void;
+  logout: () => void;
+}
 
-export function AuthProvider(props: any) {
-  const [user, setUser] = useState<any>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider(props: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, function(user: any) {
-      setUser(user);
-      setLoading(false);
-    });
-    return unsubscribe;
+    // Check for stored user
+    const storedUser = localStorage.getItem('current-user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        localStorage.removeItem('current-user');
+      }
+    }
+    setLoading(false);
   }, []);
 
-  var value = {
-    user: user,
-    loading: loading
+  const login = (email: string) => {
+    const newUser: User = {
+      uid: `user_${Date.now()}`,
+      id: `user_${Date.now()}`,
+      email,
+      displayName: email.split('@')[0],
+    };
+    localStorage.setItem('current-user', JSON.stringify(newUser));
+    setUser(newUser);
   };
 
-  return AuthContext.Provider({ value: value, children: props.children });
+  const logout = () => {
+    localStorage.removeItem('current-user');
+    setUser(null);
+  };
+
+  const value: AuthContextType = {
+    user,
+    loading,
+    login,
+    logout,
+  };
+
+  return AuthContext.Provider({ value, children: props.children });
 }
 
 export function useAuth(): AuthContextType {
-  var context = useContext(AuthContext);
-  if (context === null) {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
     throw new Error('useAuth must be used within AuthProvider');
   }
   return context;

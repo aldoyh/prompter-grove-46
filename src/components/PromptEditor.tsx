@@ -1,23 +1,16 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { CARD_COLORS } from './ColorPicker';
+import { CARD_COLORS, ColorName } from './ColorPicker';
 import { Language, t } from '@/lib/translations';
 import { analyzeText } from '@/lib/language-detection';
+import { Prompt as PromptType } from '@/domain/models/Prompt';
 
-interface Prompt {
-  id: string;
-  title: string;
-  text: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  color?: string;
-}
+type PromptEditorData = Omit<PromptType, 'id' | 'createdAt' | 'updatedAt' | 'userId'>;
 
 interface PromptEditorProps {
-  prompt?: Prompt;
-  onSave: (prompt: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  prompt?: PromptType;
+  onSave: (prompt: PromptEditorData) => void | Promise<void>;
   onClose: () => void;
   isCreate?: boolean;
   language?: Language;
@@ -27,7 +20,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
   const [title, setTitle] = useState(prompt?.title || '');
   const [text, setText] = useState(prompt?.text || '');
   const [tags, setTags] = useState(prompt?.tags.join(', ') || '');
-  const [color, setColor] = useState(prompt?.color || 'slate');
+  const [color, setColor] = useState<ColorName>(prompt?.color as ColorName || 'slate');
   const [isExpanded, setIsExpanded] = useState(!isCreate);
   const [saving, setSaving] = useState(false);
 
@@ -62,7 +55,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
         setTitle('');
         setText('');
         setTags('');
-        setColor('slate');
+        setColor('slate' as ColorName);
         setIsExpanded(false);
       }
     } finally {
@@ -75,7 +68,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
       setTitle('');
       setText('');
       setTags('');
-      setColor('slate');
+      setColor('slate' as ColorName);
       setIsExpanded(false);
     } else {
       onClose();
@@ -135,7 +128,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
                       <button
                         key={c.name}
                         type="button"
-                        onClick={() => setColor(c.name)}
+                        onClick={() => setColor(c.name as ColorName)}
                         className={`w-8 h-8 rounded-lg border-2 transition-all ${
                           color === c.name
                             ? 'border-gray-900 dark:border-white scale-110 ring-2 ring-indigo-400'
@@ -244,7 +237,7 @@ export function PromptEditor({ prompt, onSave, onClose, isCreate = false, langua
                   <button
                     key={c.name}
                     type="button"
-                    onClick={() => setColor(c.name)}
+                    onClick={() => setColor(c.name as ColorName)}
                     className={`w-8 h-8 rounded-lg border-2 transition-all ${
                       color === c.name
                         ? 'border-gray-900 dark:border-white scale-110 ring-2 ring-indigo-400'

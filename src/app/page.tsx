@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Prompt } from '@/domain/models/Prompt';
 
 export default function Home() {
-  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const { user, loading: authLoading, login, logout } = useAuth();
   const { prompts, loading, error, create, update, remove, refetch } = usePrompts({
     search: '',
     tags: [],
@@ -30,16 +30,17 @@ export default function Home() {
   // Handle authentication UI
   const handleLogin = async () => {
     try {
-      await signInWithGoogle();
+      // Simple login with a default email - in production, you'd want a proper login form
+      login('user@example.com');
       refetch();
     } catch (err) {
       console.error('Login failed:', err);
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
-      await signOut();
+      logout();
     } catch (err) {
       console.error('Logout failed:', err);
     }
@@ -67,7 +68,7 @@ export default function Home() {
   }, [prompts, searchTerm, selectedTag]);
 
   // Handle create/update/delete operations
-  const handleAddPrompt = async (promptData: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleAddPrompt = async (promptData: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     try {
       const newPrompt = await create(promptData);
       console.log('Prompt created:', newPrompt);

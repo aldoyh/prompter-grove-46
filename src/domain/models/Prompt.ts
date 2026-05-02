@@ -6,8 +6,8 @@ export interface Prompt {
   tags: string[];
   color?: 'slate' | 'rose' | 'amber' | 'emerald' | 'cyan' | 'indigo' | 'violet' | 'fuchsia';
   userId: string;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PromptCreateDTO {

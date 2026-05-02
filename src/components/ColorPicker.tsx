@@ -1,8 +1,10 @@
 'use client';
 
+export type ColorName = 'slate' | 'rose' | 'amber' | 'emerald' | 'cyan' | 'indigo' | 'violet' | 'fuchsia';
+
 interface ColorPickerProps {
-  selectedColor: string;
-  onColorChange: (color: string) => void;
+  selectedColor: ColorName;
+  onColorChange: (color: ColorName) => void;
 }
 
 export const CARD_COLORS = [
@@ -22,7 +24,7 @@ export function ColorPicker({ selectedColor, onColorChange }: ColorPickerProps) 
       {CARD_COLORS.map((color) => (
         <button
           key={color.name}
-          onClick={() => onColorChange(color.name)}
+          onClick={() => onColorChange(color.name as ColorName)}
           className={`w-6 h-6 rounded-full border-2 transition-all ${
             selectedColor === color.name
               ? 'border-slate-900 dark:border-white scale-110 ring-2 ring-indigo-400'

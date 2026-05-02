@@ -42,6 +42,8 @@ export const translations = {
     // Misc
     langEnglish: 'English',
     langArabic: 'العربية',
+    login: 'Login',
+    logout: 'Logout',
   },
   ar: {
     // Header
@@ -86,6 +88,8 @@ export const translations = {
     // Misc
     langEnglish: 'English',
     langArabic: 'العربية',
+    login: 'تسجيل الدخول',
+    logout: 'تسجيل الخروج',
   },
 } as const;
 

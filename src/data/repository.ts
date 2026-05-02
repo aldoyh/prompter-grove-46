@@ -1,38 +1,20 @@
-// Repository Pattern for Prompt Data Access
-import { db } from '@/lib/firebase/config';
+// Repository Pattern for Prompt Data Access (SQLite version)
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  startAfter,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { Prompt } from '@/domain/models/Prompt';
-import { AuthError, DatabaseError, ValidationError } from '@/domain/utils/errors';
+  createPrompt,
+  getPrompt,
+  getUserPrompts,
+  updatePrompt,
+  deletePrompt,
+  searchPrompts,
+  getPromptsByTag,
+} from '@/lib/sqlite/db';
+import { Prompt, PromptCreateDTO, PromptUpdateDTO } from '@/domain/models/Prompt';
+import { DatabaseError } from '@/domain/utils/errors';
 
 export class PromptRepository {
-  private collectionName = 'prompts';
-
-  async create(promptData: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Promise<Prompt> {
+  async create(promptData: PromptCreateDTO, userId: string): Promise<Prompt> {
     try {
-      const newPrompt: Prompt = {
-        ...promptData,
-        id: `${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
-      await addDoc(collection(db, this.collectionName), newPrompt);
-      return newPrompt;
+      return await createPrompt(promptData, userId) as Prompt;
     } catch (error) {
       throw new DatabaseError('Failed to create prompt', error);
     }
@@ -40,8 +22,7 @@ export class PromptRepository {
 
   async findById(id: string): Promise<Prompt | null> {
     try {
-      const docSnap = await getDoc(doc(db, this.collectionName, id));
-      return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as Prompt) : null;
+      return await getPrompt(id) as Prompt | null;
     } catch (error) {
       throw new DatabaseError('Failed to fetch prompt', error);
     }
@@ -53,21 +34,21 @@ export class PromptRepository {
     search?: string;
   }): Promise<Prompt[]> {
     try {
-      let q = query(
-        collection(db, this.collectionName),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
-      );
-
+      let prompts = await getUserPrompts(userId);
+      
+      if (options?.search) {
+        prompts = prompts.filter(prompt =>
+          prompt.title.toLowerCase().includes(options.search!.toLowerCase()) ||
+          prompt.text.toLowerCase().includes(options.search!.toLowerCase()) ||
+          prompt.tags.some((tag: string) => tag.toLowerCase().includes(options.search!.toLowerCase()))
+        );
+      }
+      
       if (options?.limit) {
-        q = query(q, limit(options.limit));
+        prompts = prompts.slice(0, options.limit);
       }
-      if (options?.startAfter) {
-        q = query(q, startAfter(options.startAfter));
-      }
-
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prompt));
+      
+      return prompts;
     } catch (error) {
       throw new DatabaseError('Failed to fetch user prompts', error);
     }
@@ -75,24 +56,15 @@ export class PromptRepository {
 
   async findByTag(userId: string, tag: string): Promise<Prompt[]> {
     try {
-      const q = query(
-        collection(db, this.collectionName),
-        where('userId', '==', userId),
-        where(`tags.${tag}`, '==', true)
-      );
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prompt));
+      return await getPromptsByTag(userId, tag) as Prompt[];
     } catch (error) {
       throw new DatabaseError('Failed to fetch prompts by tag', error);
     }
   }
 
-  async update(id: string, updates: Partial<Prompt>): Promise<void> {
+  async update(id: string, updates: PromptUpdateDTO): Promise<void> {
     try {
-      await updateDoc(doc(db, this.collectionName, id), {
-        ...updates,
-        updatedAt: serverTimestamp(),
-      });
+      await updatePrompt(id, updates);
     } catch (error) {
       throw new DatabaseError('Failed to update prompt', error);
     }
@@ -100,7 +72,7 @@ export class PromptRepository {
 
   async delete(id: string): Promise<void> {
     try {
-      await deleteDoc(doc(db, this.collectionName, id));
+      await deletePrompt(id);
     } catch (error) {
       throw new DatabaseError('Failed to delete prompt', error);
     }
@@ -108,15 +80,8 @@ export class PromptRepository {
 
   async search(userId: string, searchTerm: string, limit = 20): Promise<Prompt[]> {
     try {
-      // Get prompts and filter client-side for search
-      const prompts = await this.findByUser(userId, { limit });
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      
-      return prompts.filter(prompt =>
-        prompt.title.toLowerCase().includes(lowerSearchTerm) ||
-        prompt.text.toLowerCase().includes(lowerSearchTerm) ||
-        prompt.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm))
-      );
+      const prompts = await searchPrompts(userId, searchTerm);
+      return limit ? prompts.slice(0, limit) : prompts;
     } catch (error) {
       throw new DatabaseError('Failed to search prompts', error);
     }
@@ -124,13 +89,8 @@ export class PromptRepository {
 
   async countByTag(userId: string, tag: string): Promise<number> {
     try {
-      const q = query(
-        collection(db, this.collectionName),
-        where('userId', '==', userId),
-        where(`tags.${tag}`, '==', true)
-      );
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.size;
+      const prompts = await getPromptsByTag(userId, tag);
+      return prompts.length;
     } catch (error) {
       throw new DatabaseError('Failed to count prompts by tag', error);
     }
