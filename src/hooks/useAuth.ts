@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Simplified Authentication Hook (replaces Firebase Auth)
  * Uses localStorage for simple user persistence
