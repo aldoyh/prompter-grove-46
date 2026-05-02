@@ -62,7 +62,7 @@ export function AuthProvider(props: { children: ReactNode }) {
     logout,
   };
 
-  return AuthContext.Provider({ value, children: props.children });
+  return <AuthContext.Provider value={value}>{props.children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextType {
