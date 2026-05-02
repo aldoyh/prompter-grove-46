@@ -1,68 +1,89 @@
 // SQLite Database using sql.js
 // @ts-ignore - sql.js doesn't have proper TypeScript declarations
 import initSqlJs from 'sql.js';
+import { Prompt } from '@/domain/models/Prompt';
 
 let db: any = null;
 let initialized = false;
+let initPromise: Promise<any> | null = null;
 
 export async function initDatabase() {
+  // Return immediately if already initialized
   if (initialized && db) return db;
+  
+  // If initialization is in progress, wait for it
+  if (initPromise) return initPromise;
 
-  try {
-    const SQL = await initSqlJs({
-      locateFile: (file: string) => `https://sql.js.org/dist/${file}`
-    });
-    
-    // Try to load existing database from localStorage
-    const savedDb = localStorage.getItem('prompts-db');
-    if (savedDb) {
-      const buffer = new Uint8Array(JSON.parse(savedDb));
-      db = new SQL.Database(buffer);
-    } else {
-      db = new SQL.Database();
+  // Start initialization
+  initPromise = (async () => {
+    try {
+      const SQL = await initSqlJs({
+        locateFile: (file: string) => `/${file}`
+      });
+      
+      // Try to load existing database from localStorage
+      const savedDb = localStorage.getItem('prompts-db');
+      if (savedDb) {
+        try {
+          const buffer = new Uint8Array(JSON.parse(savedDb));
+          db = new SQL.Database(buffer);
+        } catch (e) {
+          console.warn('Failed to load saved database, creating new one:', e);
+          db = new SQL.Database();
+        }
+      } else {
+        db = new SQL.Database();
+      }
+
+      // Create tables if they don't exist
+      db.run(`
+        CREATE TABLE IF NOT EXISTS prompts (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          text TEXT NOT NULL,
+          tags TEXT NOT NULL,
+          color TEXT,
+          userId TEXT NOT NULL,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL
+        )
+      `);
+
+      db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL
+        )
+      `);
+
+      initialized = true;
+      saveDatabase();
+      return db;
+    } catch (error) {
+      console.error('Failed to initialize database:', error);
+      initPromise = null; // Reset so we can retry
+      throw error;
     }
+  })();
 
-    // Create tables if they don't exist
-    db.run(`
-      CREATE TABLE IF NOT EXISTS prompts (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        text TEXT NOT NULL,
-        tags TEXT NOT NULL,
-        color TEXT,
-        userId TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-      )
-    `);
-
-    db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-      )
-    `);
-
-    initialized = true;
-    saveDatabase();
-    return db;
-  } catch (error) {
-    console.error('Failed to initialize database:', error);
-    throw error;
-  }
+  return initPromise;
 }
 
 function saveDatabase() {
   if (!db) return;
-  const data = db.export();
-  const buffer = Array.from(data);
-  localStorage.setItem('prompts-db', JSON.stringify(buffer));
+  try {
+    const data = db.export();
+    const buffer = Array.from(data);
+    localStorage.setItem('prompts-db', JSON.stringify(buffer));
+  } catch (e) {
+    console.error('Failed to save database:', e);
+  }
 }
 
 // Prompt operations
-export async function createPrompt(prompt: Omit<any, 'id' | 'createdAt' | 'updatedAt'>, userId: string) {
+export async function createPrompt(promptData: { title?: string; text: string; tags?: string[]; color?: string }, userId: string): Promise<Prompt> {
   const database = await initDatabase();
   const id = `${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
@@ -70,64 +91,69 @@ export async function createPrompt(prompt: Omit<any, 'id' | 'createdAt' | 'updat
   database.run(`
     INSERT INTO prompts (id, title, text, tags, color, userId, createdAt, updatedAt)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `, [id, prompt.title || '', prompt.text, JSON.stringify(prompt.tags || []), prompt.color || null, userId, now, now]);
+  `, [id, promptData.title || '', promptData.text, JSON.stringify(promptData.tags || []), promptData.color || null, userId, now, now]);
   
   saveDatabase();
-  return { ...prompt, id, userId, createdAt: now, updatedAt: now };
+  return { ...promptData, id, userId, createdAt: now, updatedAt: now } as Prompt;
 }
 
-export async function getPrompt(promptId: string) {
+export async function getPrompt(promptId: string): Promise<Prompt | null> {
   const database = await initDatabase();
   const stmt = database.prepare('SELECT * FROM prompts WHERE id = ?');
   stmt.bind([promptId]);
   
-  if (stmt.step()) {
-    const row = stmt.getAsObject();
+  try {
+    if (stmt.step()) {
+      const row = stmt.getAsObject();
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        text: row.text as string,
+        tags: JSON.parse(row.tags as string),
+        color: row.color as Prompt['color'] || undefined,
+        userId: row.userId as string,
+        createdAt: row.createdAt as string,
+        updatedAt: row.updatedAt as string
+      };
+    }
+  } finally {
     stmt.free();
-    return {
-      id: row.id,
-      title: row.title,
-      text: row.text,
-      tags: JSON.parse(row.tags as string),
-      color: row.color || undefined,
-      userId: row.userId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt
-    };
   }
-  stmt.free();
   return null;
 }
 
-export async function getUserPrompts(userId: string) {
+export async function getUserPrompts(userId: string): Promise<Prompt[]> {
   const database = await initDatabase();
   const stmt = database.prepare('SELECT * FROM prompts WHERE userId = ? ORDER BY createdAt DESC');
   stmt.bind([userId]);
   
-  const prompts = [];
-  while (stmt.step()) {
-    const row = stmt.getAsObject();
-    prompts.push({
-      id: row.id,
-      title: row.title,
-      text: row.text,
-      tags: JSON.parse(row.tags as string),
-      color: row.color || undefined,
-      userId: row.userId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt
-    });
+  const prompts: Prompt[] = [];
+  try {
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      prompts.push({
+        id: row.id as string,
+        title: row.title as string,
+        text: row.text as string,
+        tags: JSON.parse(row.tags as string),
+        color: row.color as Prompt['color'] || undefined,
+        userId: row.userId as string,
+        createdAt: row.createdAt as string,
+        updatedAt: row.updatedAt as string
+      });
+    }
+  } finally {
+    stmt.free();
   }
-  stmt.free();
   return prompts;
 }
 
-export async function updatePrompt(promptId: string, updates: any) {
+export async function updatePrompt(promptId: string, updates: Partial<Prompt>): Promise<void> {
   const database = await initDatabase();
   const now = new Date().toISOString();
   
-  const fields = [];
-  const values = [];
+  const fields: string[] = [];
+  const values: any[] = [];
   
   if (updates.title !== undefined) {
     fields.push('title = ?');
@@ -154,13 +180,13 @@ export async function updatePrompt(promptId: string, updates: any) {
   saveDatabase();
 }
 
-export async function deletePrompt(promptId: string) {
+export async function deletePrompt(promptId: string): Promise<void> {
   const database = await initDatabase();
   database.run('DELETE FROM prompts WHERE id = ?', [promptId]);
   saveDatabase();
 }
 
-export async function searchPrompts(userId: string, searchTerm: string) {
+export async function searchPrompts(userId: string, searchTerm: string): Promise<Prompt[]> {
   const prompts = await getUserPrompts(userId);
   const term = searchTerm.toLowerCase();
   
@@ -171,27 +197,34 @@ export async function searchPrompts(userId: string, searchTerm: string) {
   );
 }
 
-export async function getPromptsByTag(userId: string, tag: string) {
+export async function getPromptsByTag(userId: string, tag: string): Promise<Prompt[]> {
   const prompts = await getUserPrompts(userId);
   return prompts.filter(prompt => prompt.tags.includes(tag));
 }
 
 // User operations
-export async function getUser(userId: string) {
+export async function getUser(userId: string): Promise<{ id: string; email: string; createdAt: string; updatedAt: string } | null> {
   const database = await initDatabase();
   const stmt = database.prepare('SELECT * FROM users WHERE id = ?');
   stmt.bind([userId]);
   
-  if (stmt.step()) {
-    const row = stmt.getAsObject();
+  try {
+    if (stmt.step()) {
+      const row = stmt.getAsObject();
+      return { 
+        id: row.id as string, 
+        email: row.email as string, 
+        createdAt: row.createdAt as string, 
+        updatedAt: row.updatedAt as string 
+      };
+    }
+  } finally {
     stmt.free();
-    return { id: row.id, email: row.email, createdAt: row.createdAt, updatedAt: row.updatedAt };
   }
-  stmt.free();
   return null;
 }
 
-export async function createUser(userId: string, email: string) {
+export async function createUser(userId: string, email: string): Promise<{ id: string; email: string; createdAt: string; updatedAt: string }> {
   const database = await initDatabase();
   const now = new Date().toISOString();
   
