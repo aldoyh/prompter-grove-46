@@ -7,7 +7,7 @@ interface DatabaseRow {
   title: string;
   text: string;
   tags: string;
-  color: string | null;
+  color: ('slate' | 'rose' | 'amber' | 'emerald' | 'cyan' | 'indigo' | 'violet' | 'fuchsia') | null;
   userId: string;
   createdAt: string;
   updatedAt: string;
@@ -94,7 +94,7 @@ function createTables(database: any): void {
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
       createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL`
+      updatedAt TEXT NOT NULL
     )
   `);
 }
@@ -118,14 +118,14 @@ function rowToPrompt(row: DatabaseRow): Prompt {
     title: row.title,
     text: row.text,
     tags: JSON.parse(row.tags),
-    color: row.color || undefined,
+    color: row.color || undefined as Prompt['color'],
     userId: row.userId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
 
-export async function createPrompt(data: { title?: string; text: string; tags?: string[]; color?: string }, userId: string): Promise<Prompt> {
+export async function createPrompt(data: { title?: string; text: string; tags?: string[]; color?: 'slate' | 'rose' | 'amber' | 'emerald' | 'cyan' | 'indigo' | 'violet' | 'fuchsia' }, userId: string): Promise<Prompt> {
   const database = await getDatabase();
   const id = userId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
   const now = new Date().toISOString();
