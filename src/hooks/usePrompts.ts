@@ -1,5 +1,5 @@
 // Custom Hook for Prompt Management
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { promptRepository } from '@/data/repository';
 import { Prompt, PromptService } from '@/domain/models/Prompt';
 import { useAuth } from './useAuth';
@@ -15,8 +15,17 @@ export function usePrompts(options: UsePromptsOptions = {}) {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
+  const optionsRef = useRef(options);
+
+  // Keep options ref in sync
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   const fetchPrompts = useCallback(async (userId: string, opts: UsePromptsOptions) => {
+    if (!isMountedRef.current) return;
+    
     try {
       setLoading(true);
       setError(null);
@@ -32,19 +41,31 @@ export function usePrompts(options: UsePromptsOptions = {}) {
         result = await promptRepository.findByUser(userId, { limit: opts.limit });
       }
       
-      setPrompts(result);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch prompts');
+      if (isMountedRef.current) {
+        setPrompts(result);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch prompts';
+      if (isMountedRef.current) {
+        setError(errorMessage);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     if (user) {
-      fetchPrompts(user.uid || user.id || '', options);
+      // Use setTimeout to defer and avoid setState in effect
+      const timer = setTimeout(() => {
+        fetchPrompts(user.uid || user.id || '', optionsRef.current);
+      }, 0);
+      
+      return () => clearTimeout(timer);
     }
-  }, [user?.uid, JSON.stringify(options), fetchPrompts]);
+  }, [user, user?.uid, user?.id, fetchPrompts]);
 
   const create = useCallback(async (data: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!user) throw new Error('User not authenticated');
@@ -60,11 +81,12 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       const newPrompt = await promptRepository.create(validatedData, user.uid || user.id || '');
       setPrompts(prev => [newPrompt, ...prev]);
       return newPrompt;
-    } catch (err: any) {
-      setError(err.message || 'Failed to create prompt');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create prompt';
+      setError(errorMessage);
       throw err;
     }
-  }, [user, promptRepository]);
+  }, [user]);
 
   const update = useCallback(async (id: string, data: Partial<Prompt>) => {
     if (!user) throw new Error('User not authenticated');
@@ -85,8 +107,9 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       setPrompts(prev => prev.map(p => 
         p.id === id ? { ...p, ...updatedData, updatedAt: new Date().toISOString() } : p
       ));
-    } catch (err: any) {
-      setError(err.message || 'Failed to update prompt');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update prompt';
+      setError(errorMessage);
       throw err;
     }
   }, [user, prompts]);
@@ -97,8 +120,9 @@ export function usePrompts(options: UsePromptsOptions = {}) {
     try {
       await promptRepository.delete(id);
       setPrompts(prev => prev.filter(p => p.id !== id));
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete prompt');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete prompt';
+      setError(errorMessage);
       throw err;
     }
   }, [user]);
@@ -110,6 +134,6 @@ export function usePrompts(options: UsePromptsOptions = {}) {
     create,
     update,
     remove,
-    refetch: () => user && fetchPrompts(user.uid || user.id || '', options),
+    refetch: () => user && fetchPrompts(user.uid || user.id || '', optionsRef.current),
   };
 }

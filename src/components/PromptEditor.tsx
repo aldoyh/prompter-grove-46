@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React from 'react';
+import { useState, useMemo } from 'react';
 import { CARD_COLORS, ColorName } from './ColorPicker';
 import { Language, t } from '@/lib/translations';
 import { analyzeText } from '@/lib/language-detection';

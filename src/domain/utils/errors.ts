@@ -27,7 +27,7 @@ export class DatabaseError extends AppError {
 }
 
 export class AuthError extends AppError {
-  constructor(message: string, originalError?: unknown) {
+  constructor(message: string, _originalError?: unknown) {
     super(message, 'AUTH_ERROR', 401, true);
   }
 }

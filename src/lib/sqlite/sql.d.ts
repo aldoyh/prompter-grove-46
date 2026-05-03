@@ -4,15 +4,15 @@ declare module 'sql.js' {
   }
   
   export interface Database {
-    run(sql: string, params?: any[]): void;
+    run(sql: string, params?: unknown[]): void;
     prepare(sql: string): Statement;
     export(): Uint8Array;
   }
   
   export interface Statement {
-    bind(params: any[]): void;
+    bind(params: unknown[]): void;
     step(): boolean;
-    getAsObject(): any;
+    getAsObject(): Record<string, unknown>;
     free(): void;
   }
   

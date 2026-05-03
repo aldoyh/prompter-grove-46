@@ -1,6 +1,7 @@
-// SQLite Database Service using sql.js'
+// SQLite Database Service using sql.js
 import initSqlJs from 'sql.js';
 import type { Prompt } from '@/domain/models/Prompt';
+import type { Database } from 'sql.js';
 
 interface DatabaseRow {
   id: string;
@@ -27,8 +28,8 @@ interface UserBasicInfo {
   updatedAt: string;
 }
 
-let db: any = null;
-let initPromise: Promise<any> | null = null;
+let db: Database | null = null;
+let initPromise: Promise<Database> | null = null;
 
 function getStorage(): Storage | null {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -37,7 +38,7 @@ function getStorage(): Storage | null {
   return null;
 }
 
-async function getDatabase(): Promise<any> {
+async function getDatabase(): Promise<Database> {
   if (db) return db;
   
   if (initPromise) return initPromise;
@@ -75,7 +76,7 @@ async function getDatabase(): Promise<any> {
   return initPromise;
 }
 
-function createTables(database: any): void {
+function createTables(database: Database): void {
   database.run(`
     CREATE TABLE IF NOT EXISTS prompts (
       id TEXT PRIMARY KEY,
@@ -99,7 +100,7 @@ function createTables(database: any): void {
   `);
 }
 
-function saveDatabase(database: any): void {
+function saveDatabase(database: Database): void {
   if (!database) return;
   
   try {
@@ -176,7 +177,7 @@ export async function updatePrompt(id: string, updates: Partial<Prompt>): Promis
   const database = await getDatabase();
   const now = new Date().toISOString();
   const fields: string[] = [];
-  const values: any[] = [];  
+  const values: unknown[] = [];  
   
   if (updates.title !== undefined) { fields.push('title = ?'); values.push(updates.title); }
   if (updates.text !== undefined) { fields.push('text = ?'); values.push(updates.text); }
@@ -188,7 +189,7 @@ export async function updatePrompt(id: string, updates: Partial<Prompt>): Promis
   values.push(id);
   
   const sql = 'UPDATE prompts SET ' + fields.join(', ') + ' WHERE id = ?';
-  database.run(sql, values);
+  database.run(sql, values as unknown[]);
   saveDatabase(database);
 }
 

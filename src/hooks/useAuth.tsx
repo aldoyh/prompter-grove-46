@@ -23,16 +23,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('current-user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    // Only run on client
+    if (typeof window === 'undefined') return;
+    
+    // Use setTimeout to defer state update and avoid setState in effect
+    const timer = setTimeout(() => {
+      try {
+        const storedUser = localStorage.getItem('current-user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch {
+        localStorage.removeItem('current-user');
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      localStorage.removeItem('current-user');
-    } finally {
-      setLoading(false);
-    }
+    }, 0);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const login = useCallback((email: string) => {

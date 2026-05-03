@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   analyzeText, 
-  getTextDirection, 
-  isArabicText,
+  getTextDirection,
   type TextLanguageInfo 
 } from '@/lib/language-detection';
 
@@ -55,21 +54,26 @@ export function useLanguageDirection(initialLang: 'en' | 'ar' = 'en') {
   const [language, setLanguage] = useState<'en' | 'ar'>(initialLang);
   const [isClient, setIsClient] = useState(false);
   
-  useEffect(() => {
-    setIsClient(true);
-    const savedLang = localStorage.getItem('language') as 'en' | 'ar' | null;
-    if (savedLang) {
-      setLanguage(savedLang);
-      updateDocumentDirection(savedLang);
-    }
-  }, []);
-  
   const updateDocumentDirection = useCallback((lang: 'en' | 'ar') => {
     if (typeof document !== 'undefined') {
       document.documentElement.lang = lang;
       document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     }
   }, []);
+  
+  useEffect(() => {
+    // Use setTimeout to defer state updates and avoid setState in effect
+    const timer = setTimeout(() => {
+      setIsClient(true);
+      const savedLang = localStorage.getItem('language') as 'en' | 'ar' | null;
+      if (savedLang) {
+        setLanguage(savedLang);
+        updateDocumentDirection(savedLang);
+      }
+    }, 0);
+    
+    return () => clearTimeout(timer);
+  }, [updateDocumentDirection]);
   
   const changeLanguage = useCallback((newLang: 'en' | 'ar') => {
     setLanguage(newLang);

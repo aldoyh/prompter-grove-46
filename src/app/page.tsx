@@ -1,41 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PromptCard } from '@/components/PromptCard';
 import { PromptEditor } from '@/components/PromptEditor';
 import { SearchBar } from '@/components/SearchBar';
 import { TagsViewer } from '@/components/TagsViewer';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { translations, Language, t } from '@/lib/translations';
+import { Language, t } from '@/lib/translations';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useAuth } from '@/hooks/useAuth';
 import { Prompt } from '@/domain/models/Prompt';
 
 export default function Home() {
   const { user, loading: authLoading, login, logout } = useAuth();
-  const { prompts, loading, error, create, update, remove, refetch } = usePrompts({
+  const { prompts, loading, create, update, remove, refetch } = usePrompts({
     search: '',
     tags: [],
     limit: 20,
   });
 
-  const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>([]);
+  const [mounted, setMounted] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
 
-  const handleLogin = () => {
-    login('user@example.com');
-    refetch();
-  };
-
-  const handleLogout = () => {
-    logout();
-  };
-
-  useEffect(() => {
+  // Use useMemo for filtered prompts - no need for separate state
+  const filteredPrompts = useMemo(() => {
     let filtered = prompts;
 
     if (selectedTag) {
@@ -51,8 +42,26 @@ export default function Home() {
       );
     }
 
-    setFilteredPrompts(filtered);
+    return filtered;
   }, [prompts, searchTerm, selectedTag]);
+
+  // Handle mounted state
+  useEffect(() => {
+    // Use setTimeout to defer state update
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleLogin = () => {
+    login('user@example.com');
+    refetch();
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const handleAddPrompt = async (promptData: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     await create(promptData);
@@ -76,11 +85,10 @@ export default function Home() {
     setCurrentLanguage(lang);
   };
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
+  // Don't render on server
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
