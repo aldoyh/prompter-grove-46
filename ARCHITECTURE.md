@@ -1,263 +1,190 @@
-# Architecture Redesign - Deep Ultra-Think Improvements
+# Architecture - SQLite Edition
 
-## 🎯 Vision Transformation
+## Overview
+This document describes the architecture of the Prompts Manager application after migration from Firebase to SQLite (sql.js).
 
-**From**: Basic Google Keep clone with localStorage
-**To**: Enterprise-grade, scalable, secure prompt management platform
+## Technology Stack
 
-## 🔧 Technical Stack Evolution
+### Frontend
+- **Framework**: Next.js 16 (App Router)
+- **UI Library**: React 19
+- **Language**: TypeScript 5
+- **Styling**: Tailwind CSS 4
 
-### Current Stack
-- Next.js 16 with Turbopack
-- React 19
-- localStorage (no Firebase despite claims)
-- Tailwind CSS
-- TypeScript (basic)
-- i18n support
+### Database Layer
+- **SQLite (sql.js)**: Runs entirely in the browser
+- **WASM**: WebAssembly module for performance
+- **Persistence**: localStorage for database backups
 
-### Proposed Stack
-- **Next.js 16.1+** with App Router
-- **React 19** with Server Components
-- **Firebase Firestore** (real-time database)
-- **Firebase Auth** (authentication)
-- **Tailwind CSS 4** with custom design system
-- **TypeScript 5+** with strict mode
-- **Zod validation** (enhanced)
-- **React Query** (state management)
-- **Next.js Image Optimization**
-- **Server-side rendering** for SEO
+### State Management
+- **React Hooks**: useState, useEffect, useCallback
+- **Custom Hooks**: usePrompts, useAuth
 
-## 🏗️ New Architecture Layers
+## Architecture Layers
 
-### 1. Data Layer (Firebase Integration)
 ```
 src/
-├── lib/
-│   ├── firebase/
-│   │   ├── config.ts          # Firebase initialization
-│   │   ├── db.ts             # Firestore operations
-│   │   ├── auth.ts           # Authentication
-│   │   └── types.ts          # Database types
-└── data/
-    ├── prompts/
-    │   ├── repository.ts      # Data access layer
-    │   ├── validation.ts      # Zod schemas
-    │   └── cache.ts          # Caching layer
+├── app/                    # Next.js App Router
+│   ├── layout.tsx       # Root layout with providers
+│   ├── page.tsx         # Home page
+│   └── globals.css      # Global styles
+├── components/             # Reusable UI components
+│   ├── PromptCard.tsx   # Display prompt cards
+│   ├── PromptEditor.tsx # Create/edit prompts
+│   ├── SearchBar.tsx    # Search functionality
+│   ├── TagsViewer.tsx  # Tag filtering
+│   ├── ColorPicker.tsx # Color selection
+│   ├── LanguageSwitcher.tsx # Language selection
+│   └── ErrorBoundary.tsx # Error handling
+├── hooks/                  # Custom React hooks
+│   ├── usePrompts.tsx  # Prompt management
+│   ├── useAuth.tsx     # Authentication
+│   └── useAutoDirection.ts # Text direction
+├── lib/                    # Library utilities
+│   ├── sqlite/           # SQLite database layer
+│   │   └── db.ts       # Database operations
+│   ├── translations.ts  # i18n support
+│   └── language-detection.ts # Auto RTL/LTR
+├── data/                   # Repository layer
+│   └── repository.ts    # Data access
+└── domain/                 # Domain models
+    ├── models/
+    │   └── Prompt.ts    # Prompt model
+    └── utils/
+        └── errors.ts     # Error classes
 ```
 
-### 2. State Management Layer
-```
-src/
-├── lib/
-│   ├── store/
-│   │   ├── prompts.ts        # React Query store
-│   │   ├── ui.ts             # UI state
-│   │   └── auth.ts           # Auth state
-└── hooks/
-    ├── usePrompts.ts         # Custom hooks
-    ├── useAuth.ts
-    └── useRealtimeUpdates.ts
-```
+## Data Flow
 
-### 3. Domain Layer
-```
-src/
-├── domain/
-│   ├── models/
-│   │   ├── Prompt.ts         # Domain model
-│   │   └── User.ts
-│   ├── services/
-│   │   ├── search.ts         # Search algorithms
-│   │   ├── tagging.ts        # Tag management
-│   │   └── analytics.ts      # Usage analytics
-│   └── utils/
-       ├── date.ts
-       ├── string.ts
-       └── validation.ts
-```
+### Creating a Prompt
+1. User enters prompt in `PromptEditor`
+2. `usePrompts.create()` is called
+3. `promptRepository.create()` is called
+4. `db.createPrompt()` executes SQL INSERT
+5. Database is saved to localStorage
 
-### 4. Presentation Layer
-```
-src/
-├── components/
-│   ├── ui/
-│   │   ├── PromptCard.tsx
-│   │   ├── PromptEditor.tsx
-│   │   └── SearchBar.tsx
-│   ├── features/
-│   │   ├── TagManager.tsx
-│   │   ├── CategoryFilter.tsx
-│   │   └── AnalyticsDashboard.tsx
-│   └── templates/
-│       ├── MobileLayout.tsx
-│       └── DesktopLayout.tsx
-└── pages/
-    ├── index.tsx            # Main page
-    ├── prompts/[id].tsx     # Prompt detail
-    └── settings.tsx         # User settings
+### Reading Prompts
+1. `usePrompts` hook initializes
+2. `promptRepository.findByUser()` is called
+3. `db.getUserPrompts()` executes SQL SELECT
+4. Results are returned as Prompt objects
+5. State is updated, UI re-renders
+
+### Updating a Prompt
+1. User edits prompt in `PromptEditor`
+2. `usePrompts.update()` is called
+3. `promptRepository.update()` is called
+4. `db.updatePrompt()` executes SQL UPDATE
+5. Database is saved to localStorage
+
+## Database Schema
+
+### Table: prompts
+```sql
+CREATE TABLE prompts (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  text TEXT NOT NULL,
+  tags TEXT NOT NULL,  -- JSON array
+  color TEXT,
+  userId TEXT NOT NULL,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+)
 ```
 
-## 🚀 Performance Optimizations
+### Table: users
+```sql
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+)
+```
 
-### 1. Server-Side Improvements
-- **Static Generation**: Pre-render static pages
-- **Server-Side Rendering**: Dynamic content with SSR
-- **API Routes**: Custom API endpoints for complex operations
-- **Caching**: Redis/Memory caching for frequent queries
+## Authentication
 
-### 2. Client-Side Optimizations
-- **Code Splitting**: Lazy loading components
-- **Image Optimization**: Next.js Image component
-- **Bundle Splitting**: Separate vendor and app code
-- **Prefetching**: Predictive page loading
+### Current Implementation (SQLite Edition)
+- **localStorage-based**: User session stored in localStorage
+- **Simple login**: Email-based identification
+- **No external dependencies**: Works offline
 
-### 3. Database Optimizations
-- **Indexing**: Firestore indexes for common queries
-- **Batch Operations**: Bulk writes for performance
-- **Real-time Listeners**: Efficient data synchronization
-- **Pagination**: Limit query results
+### Future Enhancement
+Can be extended with proper authentication (OAuth, JWT) if needed.
 
-## 🔒 Security Enhancements
+## Key Design Decisions
 
-### 1. Authentication
-- **Firebase Auth**: Email/password, Google, OAuth
-- **Session Management**: Secure token handling
-- **Role-Based Access**: Admin/user permissions
-- **Rate Limiting**: Prevent abuse
+### 1. SQLite over Firebase
+- **Offline-first**: Works without internet
+- **No external dependencies**: Simpler deployment
+- **Data privacy**: All data stays in browser
+- **Easy migration**: Can export/import data
 
-### 2. Data Security
-- **Validation**: Zod schemas for all inputs
-- **Sanitization**: XSS prevention
-- **Encryption**: Sensitive data protection
-- **Audit Logs**: Track all changes
+### 2. sql.js for Browser SQLite
+- **WebAssembly**: High performance
+- **Familiar API**: Standard SQL
+- **Proven**: Used in many projects
 
-### 3. Network Security
-- **HTTPS**: Enforced for all connections
-- **CORS**: Proper configuration
-- **CSRF Protection**: Token-based validation
-- **Input Validation**: Server-side validation
+### 3. Repository Pattern
+- **Abstraction**: Database layer is abstracted
+- **Testable**: Easy to mock for tests
+- **Flexible**: Can switch database if needed
 
-## 🌐 Internationalization Enhancement
+## Build & Deployment
 
-### Current State
-- Basic English/Arabic support
-- Manual direction switching
+### Build
+```bash
+pnpm build
+```
 
-### Proposed State
-- **10+ Languages**: English, Arabic, Spanish, French, German, Chinese, Japanese, Korean, Portuguese, Russian
-- **Automatic Detection**: Browser language detection
-- **RTL Support**: Full bidirectional text support
-- **Translation Files**: Separate translation management
-- **Dynamic Loading**: Load translations on demand
-
-## 📊 Analytics and Monitoring
-
-### 1. Usage Analytics
-- **Active Users**: Track daily active users
-- **Feature Usage**: Monitor feature adoption
-- **Performance Metrics**: Load times, API response times
-- **Error Tracking**: Sentry integration
-
-### 2. User Behavior
-- **Session Tracking**: User journey analysis
-- **Feature Adoption**: Understand usage patterns
-- **Retention Metrics**: User retention rates
-- **Conversion Tracking**: Goal completion
-
-## 🎨 Design System Evolution
-
-### Current Design
-- Basic Tailwind classes
-- Manual color management
-
-### Proposed Design System
-- **Design Tokens**: Centralized design language
-- **Component Library**: Reusable UI components
-- **Theme System**: Dark/light mode
-- **Accessibility**: WCAG compliance
-- **Responsive Design**: Mobile-first approach
-
-## 🔄 Migration Strategy
-
-### Phase 1: Foundation (Weeks 1-2)
-1. Set up Firebase project
-2. Configure authentication
-3. Create database schema
-4. Set up development environment
-
-### Phase 2: Core Features (Weeks 3-6)
-1. Implement CRUD operations
-2. Add authentication
-3. Build search functionality
-4. Create data validation
-
-### Phase 3: UI Enhancement (Weeks 7-8)
-1. Redesign component library
-2. Implement responsive design
-3. Add analytics dashboard
-4. Improve user experience
-
-### Phase 4: Optimization (Weeks 9-10)
-1. Performance optimization
-2. Security hardening
-3. Testing and debugging
-4. Deployment preparation
-
-## 📈 Success Metrics
-
-### Technical Metrics
-- **Performance**: Page load time < 2s
-- **Reliability**: 99.9% uptime
-- **Security**: Zero critical vulnerabilities
-- **Scalability**: Support 10,000+ concurrent users
-
-### Business Metrics
-- **User Engagement**: 70% daily active users
-- **Feature Adoption**: 80% use core features
-- **Retention**: 60% monthly retention
-- **Satisfaction**: 4.5/5 user rating
-
-## 🛠️ Development Best Practices
-
-### Code Quality
-- **Type Safety**: Strict TypeScript configuration
-- **Code Review**: Mandatory PR reviews
-- **Testing**: Unit and integration tests
-- **Documentation**: JSDoc for all functions
-
-### Version Control
-- **Branch Strategy**: GitFlow methodology
-- **Commit Messages**: Conventional commits
-- **Release Management**: Semantic versioning
-- **Rollback Strategy**: Automated rollback capability
-
-## 🔧 Tooling and Infrastructure
-
-### Development Tools
-- **ESLint**: Code quality
-- **Prettier**: Code formatting
-- **Jest**: Testing framework
-- **Storybook**: Component development
+### Development
+The app runs automatically in the Quests app environment.
 
 ### Deployment
-- **CI/CD**: Automated pipeline
-- **Monitoring**: Application performance monitoring
-- **Backup**: Automated database backups
-- **Disaster Recovery**: Recovery procedures
+```bash
+./deploy.sh deploy
+```
 
-## 📋 Next Steps
+## Performance Considerations
 
-1. **Immediate Actions** (This Week)
-   - Set up Firebase project
-   - Configure authentication
-   - Create basic database schema
+### Database
+- **WASM module**: Fast SQL execution
+- **localStorage**: Asynchronous saving
+- **Indexed queries**: Fast lookups by userId
 
-2. **Short-term Goals** (This Month)
-   - Implement core CRUD operations
-   - Add user authentication
-   - Build search functionality
+### Frontend
+- **Code splitting**: Automatic with Next.js
+- **Static generation**: Pre-rendered pages
+- **Lazy loading**: Components loaded on demand
 
-3. **Long-term Vision** (Next Quarter)
-   - Full feature implementation
-   - Performance optimization
-   - Production deployment
+## Security
+
+### Current (SQLite Edition)
+- **Client-side only**: No server-side data storage
+- **Data isolation**: Each browser has its own database
+- **XSS prevention**: React escapes by default
+
+### Future Enhancements
+- Add server-side validation if adding backend
+- Implement proper authentication if needed
+- Add HTTPS enforcement for production
+
+## Migration from Firebase
+
+### What Changed
+| Feature | Firebase | SQLite |
+|---------|---------|--------|
+| Database | Firestore | sql.js |
+| Auth | Firebase Auth | localStorage |
+| Hosting | Firebase | Cloudflare |
+| Real-time | Firestore sync | Not needed |
+
+### Benefits
+1. **Simpler setup**: No Firebase configuration
+2. **Offline-first**: Works without internet
+3. **Data privacy**: Stays in browser
+4. **Faster development**: No cloud dependencies
+
+## Conclusion
+The application has been successfully migrated from Firebase to SQLite. All functionality is preserved with the added benefits of offline support and simpler deployment.

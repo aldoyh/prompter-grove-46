@@ -7,35 +7,42 @@ let db: any = null;
 let initialized = false;
 let initPromise: Promise<any> | null = null;
 
+function getLocalStorage() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage;
+  }
+  return null;
+}
+
 export async function initDatabase() {
-  // Return immediately if already initialized
   if (initialized && db) return db;
-  
-  // If initialization is in progress, wait for it
   if (initPromise) return initPromise;
 
-  // Start initialization
   initPromise = (async () => {
     try {
       const SQL = await initSqlJs({
         locateFile: (file: string) => `/${file}`
       });
       
-      // Try to load existing database from localStorage
-      const savedDb = localStorage.getItem('prompts-db');
-      if (savedDb) {
-        try {
-          const buffer = new Uint8Array(JSON.parse(savedDb));
-          db = new SQL.Database(buffer);
-        } catch (e) {
-          console.warn('Failed to load saved database, creating new one:', e);
+      const storage = getLocalStorage();
+      
+      if (storage) {
+        const savedDb = storage.getItem('prompts-db');
+        if (savedDb) {
+          try {
+            const buffer = new Uint8Array(JSON.parse(savedDb));
+            db = new SQL.Database(buffer);
+          } catch (e) {
+            console.warn('Failed to load saved database, creating new one:', e);
+            db = new SQL.Database();
+          }
+        } else {
           db = new SQL.Database();
         }
       } else {
         db = new SQL.Database();
       }
 
-      // Create tables if they don't exist
       db.run(`
         CREATE TABLE IF NOT EXISTS prompts (
           id TEXT PRIMARY KEY,
@@ -63,7 +70,7 @@ export async function initDatabase() {
       return db;
     } catch (error) {
       console.error('Failed to initialize database:', error);
-      initPromise = null; // Reset so we can retry
+      initPromise = null;
       throw error;
     }
   })();
@@ -76,16 +83,18 @@ function saveDatabase() {
   try {
     const data = db.export();
     const buffer = Array.from(data);
-    localStorage.setItem('prompts-db', JSON.stringify(buffer));
+    const storage = getLocalStorage();
+    if (storage) {
+      storage.setItem('prompts-db', JSON.stringify(buffer));
+    }
   } catch (e) {
     console.error('Failed to save database:', e);
   }
 }
 
-// Prompt operations
 export async function createPrompt(promptData: { title?: string; text: string; tags?: string[]; color?: string }, userId: string): Promise<Prompt> {
   const database = await initDatabase();
-  const id = `${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const id = `${userId}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   const now = new Date().toISOString();
   
   database.run(`
@@ -153,7 +162,7 @@ export async function updatePrompt(promptId: string, updates: Partial<Prompt>): 
   const now = new Date().toISOString();
   
   const fields: string[] = [];
-  const values: any[] = [];
+  const values: any[] = [];  
   
   if (updates.title !== undefined) {
     fields.push('title = ?');
@@ -202,7 +211,6 @@ export async function getPromptsByTag(userId: string, tag: string): Promise<Prom
   return prompts.filter(prompt => prompt.tags.includes(tag));
 }
 
-// User operations
 export async function getUser(userId: string): Promise<{ id: string; email: string; createdAt: string; updatedAt: string } | null> {
   const database = await initDatabase();
   const stmt = database.prepare('SELECT * FROM users WHERE id = ?');
