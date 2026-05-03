@@ -26,9 +26,17 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('Error caught by boundary:', error, errorInfo);
   }
 
+  handleReset = () => {
+    this.setState({ hasError: false, error: undefined });
+  }
+
   render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+      
+      return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
           <div className="text-center p-8">
             <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
@@ -36,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             <button
-              onClick={() => this.setState({ hasError: false })}
+              onClick={this.handleReset}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               Try again

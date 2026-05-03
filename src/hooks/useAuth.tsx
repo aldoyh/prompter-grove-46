@@ -1,14 +1,10 @@
 'use client';
 
-/**
- * Simplified Authentication Hook (replaces Firebase Auth)
- * Uses localStorage for simple user persistence
- */
 import { useState, useEffect, useContext, createContext, ReactNode } from 'react';
 
 interface User {
   uid: string;
-  id: string;  // Add id alias for uid
+  id: string;
   email: string;
   displayName?: string;
 }
@@ -22,21 +18,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider(props: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user
-    const storedUser = localStorage.getItem('current-user');
-    if (storedUser) {
-      try {
+    try {
+      const storedUser = localStorage.getItem('current-user');
+      if (storedUser) {
         setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem('current-user');
       }
+    } catch (e) {
+      console.error('Failed to load user:', e);
+      localStorage.removeItem('current-user');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = (email: string) => {
@@ -62,7 +59,7 @@ export function AuthProvider(props: { children: ReactNode }) {
     logout,
   };
 
-  return <AuthContext.Provider value={value}>{props.children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextType {
