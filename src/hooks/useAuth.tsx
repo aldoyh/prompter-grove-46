@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useContext, createContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react';
 
-interface User {
+export interface User {
   uid: string;
   id: string;
   email: string;
@@ -28,15 +28,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
-    } catch (e) {
-      console.error('Failed to load user:', e);
+    } catch {
       localStorage.removeItem('current-user');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const login = (email: string) => {
+  const login = useCallback((email: string) => {
     const newUser: User = {
       uid: `user_${Date.now()}`,
       id: `user_${Date.now()}`,
@@ -45,19 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     localStorage.setItem('current-user', JSON.stringify(newUser));
     setUser(newUser);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('current-user');
     setUser(null);
-  };
+  }, []);
 
-  const value: AuthContextType = {
-    user,
-    loading,
-    login,
-    logout,
-  };
+  const value = { user, loading, login, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

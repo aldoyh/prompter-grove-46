@@ -17,7 +17,6 @@ export default function Home() {
     search: '',
     tags: [],
     limit: 20,
-    enableRealtime: true,
   });
 
   const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>([]);
@@ -27,21 +26,13 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
 
-  const handleLogin = async () => {
-    try {
-      login('user@example.com');
-      refetch();
-    } catch (err) {
-      console.error('Login failed:', err);
-    }
+  const handleLogin = () => {
+    login('user@example.com');
+    refetch();
   };
 
   const handleLogout = () => {
-    try {
-      logout();
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
+    logout();
   };
 
   useEffect(() => {
@@ -64,29 +55,16 @@ export default function Home() {
   }, [prompts, searchTerm, selectedTag]);
 
   const handleAddPrompt = async (promptData: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
-    try {
-      const newPrompt = await create(promptData);
-      console.log('Prompt created:', newPrompt);
-    } catch (err: any) {
-      console.error('Failed to create prompt:', err);
-    }
+    await create(promptData);
   };
 
   const handleUpdatePrompt = async (id: string, updates: Partial<Prompt>) => {
-    try {
-      await update(id, updates);
-      setEditingId(null);
-    } catch (err: any) {
-      console.error('Failed to update prompt:', err);
-    }
+    await update(id, updates);
+    setEditingId(null);
   };
 
   const handleDeletePrompt = async (id: string) => {
-    try {
-      await remove(id);
-    } catch (err: any) {
-      console.error('Failed to delete prompt:', err);
-    }
+    await remove(id);
   };
 
   const handleTagClick = (tag: string) => {

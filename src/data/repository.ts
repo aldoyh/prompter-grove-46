@@ -14,7 +14,8 @@ import { DatabaseError } from '@/domain/utils/errors';
 export class PromptRepository {
   async create(promptData: PromptCreateDTO, userId: string): Promise<Prompt> {
     try {
-      return await createPrompt(promptData, userId) as Prompt;
+      const result = await createPrompt(promptData, userId);
+      return result as Prompt;
     } catch (error) {
       throw new DatabaseError('Failed to create prompt', error);
     }
@@ -22,7 +23,7 @@ export class PromptRepository {
 
   async findById(id: string): Promise<Prompt | null> {
     try {
-      return await getPrompt(id) as Prompt | null;
+      return await getPrompt(id);
     } catch (error) {
       throw new DatabaseError('Failed to fetch prompt', error);
     }
@@ -30,7 +31,6 @@ export class PromptRepository {
 
   async findByUser(userId: string, options?: {
     limit?: number;
-    startAfter?: any;
     search?: string;
   }): Promise<Prompt[]> {
     try {
@@ -56,7 +56,7 @@ export class PromptRepository {
 
   async findByTag(userId: string, tag: string): Promise<Prompt[]> {
     try {
-      return await getPromptsByTag(userId, tag) as Prompt[];
+      return await getPromptsByTag(userId, tag);
     } catch (error) {
       throw new DatabaseError('Failed to fetch prompts by tag', error);
     }

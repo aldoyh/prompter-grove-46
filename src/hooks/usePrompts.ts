@@ -1,5 +1,5 @@
-// Custom Hook for Prompt Management with Real-time Updates
-import { useState, useEffect, useCallback, useMemo } from 'react';
+// Custom Hook for Prompt Management
+import { useState, useEffect, useCallback } from 'react';
 import { promptRepository } from '@/data/repository';
 import { Prompt, PromptService } from '@/domain/models/Prompt';
 import { useAuth } from './useAuth';
@@ -8,7 +8,6 @@ interface UsePromptsOptions {
   search?: string;
   tags?: string[];
   limit?: number;
-  enableRealtime?: boolean;
 }
 
 export function usePrompts(options: UsePromptsOptions = {}) {
@@ -17,7 +16,7 @@ export function usePrompts(options: UsePromptsOptions = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPrompts = useCallback(async (userId: string, opts: UsePromptsOptions = {}) => {
+  const fetchPrompts = useCallback(async (userId: string, opts: UsePromptsOptions) => {
     try {
       setLoading(true);
       setError(null);
@@ -25,25 +24,17 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       let result: Prompt[];
       
       if (opts.search || opts.tags?.length) {
-        // Use search for combined filtering
         result = await promptRepository.search(userId, opts.search || '', 100);
-        
-        // Apply tag filtering if needed
         if (opts.tags?.length) {
-          result = result.filter(prompt =>
-            opts.tags!.every(tag => prompt.tags.includes(tag))
-          );
+          result = result.filter(p => opts.tags!.every(tag => p.tags.includes(tag)));
         }
       } else {
-        result = await promptRepository.findByUser(userId, {
-          limit: opts.limit,
-        });
+        result = await promptRepository.findByUser(userId, { limit: opts.limit });
       }
       
       setPrompts(result);
     } catch (err: any) {
-      setError(err.message);
-      console.error('Failed to fetch prompts:', err);
+      setError(err.message || 'Failed to fetch prompts');
     } finally {
       setLoading(false);
     }
@@ -70,7 +61,7 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       setPrompts(prev => [newPrompt, ...prev]);
       return newPrompt;
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to create prompt');
       throw err;
     }
   }, [user, promptRepository]);
@@ -82,9 +73,7 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       const existing = prompts.find(p => p.id === id);
       if (!existing) throw new Error('Prompt not found');
       
-      const updatedData: Partial<Prompt> = {
-        ...data,
-      };
+      const updatedData: Partial<Prompt> = { ...data };
       
       if (data.tags !== undefined) {
         updatedData.tags = PromptService.normalizeTags(data.tags);
@@ -94,12 +83,10 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       await promptRepository.update(id, updatedData);
       
       setPrompts(prev => prev.map(p => 
-        p.id === id 
-          ? { ...p, ...updatedData, updatedAt: new Date().toISOString() }
-          : p
+        p.id === id ? { ...p, ...updatedData, updatedAt: new Date().toISOString() } : p
       ));
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to update prompt');
       throw err;
     }
   }, [user, prompts]);
@@ -111,7 +98,7 @@ export function usePrompts(options: UsePromptsOptions = {}) {
       await promptRepository.delete(id);
       setPrompts(prev => prev.filter(p => p.id !== id));
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to delete prompt');
       throw err;
     }
   }, [user]);
