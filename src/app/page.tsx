@@ -27,10 +27,8 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
 
-  // Handle authentication UI
   const handleLogin = async () => {
     try {
-      // Simple login with a default email - in production, you'd want a proper login form
       login('user@example.com');
       refetch();
     } catch (err) {
@@ -46,28 +44,25 @@ export default function Home() {
     }
   };
 
-  // Filter prompts based on search and tags
   useEffect(() => {
     let filtered = prompts;
 
-    // Filter by tag
     if (selectedTag) {
       filtered = filtered.filter(p => p.tags.includes(selectedTag));
     }
 
-    // Filter by search term
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(p =>
-        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
+        p.title.toLowerCase().includes(term) ||
+        p.text.toLowerCase().includes(term) ||
+        p.tags.some(t => t.toLowerCase().includes(term))
       );
     }
 
     setFilteredPrompts(filtered);
   }, [prompts, searchTerm, selectedTag]);
 
-  // Handle create/update/delete operations
   const handleAddPrompt = async (promptData: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     try {
       const newPrompt = await create(promptData);
@@ -103,7 +98,6 @@ export default function Home() {
     setCurrentLanguage(lang);
   };
 
-  // Initialize mounted state
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -112,7 +106,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      {/* Header */}
       <header className="animated-header sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -147,13 +140,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Search Bar */}
       <SearchBar value={searchTerm} onChange={setSearchTerm} language={currentLanguage} />
 
-      {/* Main Layout */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Sidebar - Tags Viewer */}
           <div className="lg:col-span-1 order-2 lg:order-1">
             {!authLoading && (
               <TagsViewer
@@ -166,9 +156,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-3 order-1 lg:order-2">
-            {/* Create New Prompt */}
             <div className="mb-8">
               <PromptEditor
                 onSave={handleAddPrompt}
@@ -178,7 +166,6 @@ export default function Home() {
               />
             </div>
 
-            {/* Prompts Grid */}
             {loading ? (
               <div className="flex justify-center items-center py-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 dark:border-indigo-900 border-t-indigo-600 dark:border-t-indigo-400"></div>
