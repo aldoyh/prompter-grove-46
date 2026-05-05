@@ -10,6 +10,7 @@ import { Language, t } from '@/lib/translations';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useAuth } from '@/hooks/useAuth';
 import { Prompt } from '@/domain/models/Prompt';
+import { seedDatabase } from '@/lib/sqlite/seed';
 
 export default function Home() {
   const { user, loading: authLoading, login, logout } = useAuth();
@@ -24,6 +25,8 @@ export default function Home() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
+  const [seeding, setSeeding] = useState(false);
+  const [seeded, setSeeded] = useState(false);
 
   // Use useMemo for filtered prompts - no need for separate state
   const filteredPrompts = useMemo(() => {
@@ -54,6 +57,13 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Auto-seed when user is logged in and no prompts exist
+  useEffect(() => {
+    if (user && !authLoading && !loading && prompts.length === 0 && !seeded && !seeding) {
+      handleSeedData();
+    }
+  }, [user, authLoading, loading, prompts.length, seeded, seeding]);
+
   const handleLogin = () => {
     login('user@example.com');
     refetch();
@@ -61,6 +71,21 @@ export default function Home() {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleSeedData = async () => {
+    if (seeded || seeding) return;
+    setSeeding(true);
+    try {
+      const userId = user?.id || 'user@example.com';
+      await seedDatabase(userId);
+      await refetch();
+      setSeeded(true);
+    } catch (error) {
+      console.error('Failed to seed data:', error);
+    } finally {
+      setSeeding(false);
+    }
   };
 
   const handleAddPrompt = async (promptData: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
@@ -173,6 +198,24 @@ export default function Home() {
                     ? t(currentLanguage, 'noPromptsTagDesc')
                     : t(currentLanguage, 'noMatchesDesc')}
                 </p>
+                {prompts.length === 0 && user && (
+                  <div className="flex flex-col items-center gap-4">
+                    {seeding ? (
+                      <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-200 dark:border-indigo-900 border-t-indigo-600 dark:border-t-indigo-400"></div>
+                        <span>Setting up your prompt collection...</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleSeedData}
+                        disabled={seeding}
+                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
+                      >
+                        🌱 Load Sample Data
+                      </button>
+                    )}
+                  </div>
+                )}
                 {selectedTag && (
                   <button
                     onClick={() => setSelectedTag(null)}

@@ -48,7 +48,7 @@ chmod +x deploy.sh && ./deploy.sh setup
 | Command | Purpose |
 |---------|---------|
 | `./deploy.sh build` | Build application |
-| `npm run build` | Next.js build |
+| `pnpm run build` | Next.js build |
 | `npx tsc --noEmit` | TypeScript check |
 
 ### Deployment
@@ -186,7 +186,7 @@ npx wrangler tail --env production --format json
 ### Scenario: Manual Troubleshooting
 ```bash
 bash pre-deploy-check.sh     # Run checks
-npm run build                 # Build locally
+pnpm run build                 # Build locally
 ./deploy.sh deploy --dry-run  # Preview
 ```
 
@@ -229,11 +229,11 @@ npm run build                 # Build locally
 du -sh .next
 
 # Clean build
-rm -rf .next && npm run build
+rm -rf .next && pnpm run build
 
 # Optimize
-npm audit fix
-npm outdated
+pnpm audit fix
+pnpm outdated
 
 # Monitor
 npx wrangler tail --env production --format json | tail -20
@@ -286,7 +286,7 @@ history | tail -1
 
 # Clean everything and redeploy
 rm -rf .next node_modules
-npm install
+pnpm install
 ./deploy.sh deploy
 ```
 

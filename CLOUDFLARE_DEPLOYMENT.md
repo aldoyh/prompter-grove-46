@@ -159,7 +159,7 @@ workers_dev = true
 
 ```toml
 [build]
-command = "npm run build"
+command = "pnpm build"
 cwd = "."
 ```
 
@@ -334,10 +334,10 @@ npx wrangler deployments info <deployment-id>
 
 ```bash
 # Check bundle size
-npm run build
+pnpm build
 
 # Analyze webpack bundle
-npm install --save-dev webpack-bundle-analyzer
+pnpm install --save-dev webpack-bundle-analyzer
 ```
 
 ## Rollback
@@ -379,7 +379,7 @@ Follow the prompts to authenticate with Cloudflare.
 
 **Solution:**
 ```bash
-npm install wrangler --save-dev
+pnpm install wrangler --save-dev
 ```
 
 ### Build Errors
@@ -389,11 +389,11 @@ npm install wrangler --save-dev
 **Solution:**
 ```bash
 # Check for type errors
-npm run build
+pnpm build
 
 # Fix errors in src/
 # Re-run build
-npm run build
+pnpm build
 ```
 
 ### Deployment Fails
@@ -463,7 +463,7 @@ Edit `wrangler.toml`:
 
 ```toml
 [build]
-command = "npm run build && npm run optimize"
+command = "pnpm build && pnpm optimize"
 cwd = "."
 ```
 
@@ -519,8 +519,8 @@ zone_id = "your-zone-id"
 ### Before Deployment
 
 - ✓ Run `./deploy.sh health` to check status
-- ✓ Test locally with `npm run dev`
-- ✓ Run builds locally with `npm run build`
+- ✓ Test locally with `pnpm dev`
+- ✓ Run builds locally with `pnpm build`
 - ✓ Commit all changes to git
 
 ### During Deployment
@@ -574,7 +574,7 @@ Periodically rotate your API tokens:
    ```
 
 2. **Minify Assets:**
-   Just use `npm run build`
+   Just use `pnpm build`
 
 3. **Use KV for Data:**
    Store static data in KV instead of database

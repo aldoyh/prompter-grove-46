@@ -7,6 +7,7 @@ A beautiful, production-ready prompt management platform built with Next.js and 
 ## 🚀 Features
 
 ### Core Features
+
 - **Prompt Management**: Create, edit, delete, and organize prompts
 - **Real-time Search**: Instant search across titles, content, and tags
 - **Tag System**: Multi-tag organization with filtering
@@ -15,6 +16,7 @@ A beautiful, production-ready prompt management platform built with Next.js and 
 - **Data Persistence**: SQLite database with localStorage backup
 
 ### Advanced Features
+
 - **Responsive Design**: Mobile, tablet, and desktop optimized
 - **TypeScript Safety**: Full type safety throughout
 - **Server-Side Rendering**: SEO optimized
@@ -23,6 +25,7 @@ A beautiful, production-ready prompt management platform built with Next.js and 
 ## 🏗️ Architecture
 
 ### Technology Stack
+
 - **Frontend**: Next.js 16, React 19, TypeScript 5
 - **Database**: SQLite (sql.js) - runs in browser
 - **Styling**: Tailwind CSS 4
@@ -30,6 +33,7 @@ A beautiful, production-ready prompt management platform built with Next.js and 
 - **Deployment**: Cloudflare Workers
 
 ### Architecture Layers
+
 ```
 src/
 ├── app/                 # Next.js pages and layouts
@@ -46,10 +50,12 @@ src/
 ## 📦 Installation
 
 ### Prerequisites
+
 - Node.js v16+
 - pnpm (recommended) or npm
 
 ### Setup
+
 ```bash
 # 1. Install dependencies
 pnpm install
@@ -61,6 +67,7 @@ pnpm dev
 ## 🚀 Deployment
 
 ### Build for Production
+
 ```bash
 # Build application
 pnpm build
@@ -70,6 +77,7 @@ pnpm start
 ```
 
 ### Cloudflare Deployment
+
 ```bash
 # One-time setup
 ./deploy.sh setup
@@ -84,6 +92,7 @@ pnpm start
 ## 📊 Usage
 
 ### Creating a Prompt
+
 1. Click "Create New Prompt"
 2. Enter your prompt content
 3. Add relevant tags (comma-separated)
@@ -91,17 +100,20 @@ pnpm start
 5. Click Save
 
 ### Searching Prompts
+
 - Use the search bar to find prompts by title, content, or tags
 - Filter by specific tags using the tags panel
 - Clear filters with the "Clear Filter" button
 
 ### Managing Prompts
+
 - **Edit**: Click the edit button on any prompt
 - **Delete**: Click the delete button (confirmation required)
 - **Color**: Change color using the color picker
 - **Tags**: Add or remove tags as needed
 
 ### Language Switching
+
 - Use the language switcher in the header
 - Supports English and Arabic (with RTL support)
 - Automatic direction (LTR/RTL) based on language
@@ -109,9 +121,11 @@ pnpm start
 ## 🔧 Configuration
 
 ### Environment Variables
+
 No environment variables are required! This version uses SQLite (sql.js) running in the browser with localStorage for persistence.
 
 ### Database
+
 - **SQLite (sql.js)**: Runs entirely in the browser
 - **Persistence**: Data is saved to localStorage automatically
 - **WASM**: SQL.js uses a WebAssembly module for performance
@@ -119,10 +133,12 @@ No environment variables are required! This version uses SQLite (sql.js) running
 ## 🌐 Internationalization
 
 ### Supported Languages
+
 - English (en)
 - Arabic (ar) with full RTL support
 
 ### Adding New Languages
+
 1. Add translations to `src/lib/translations.ts`
 2. Update the Language type
 3. Test RTL/LTR support
@@ -131,6 +147,7 @@ No environment variables are required! This version uses SQLite (sql.js) running
 ## 📝 Development
 
 ### Available Scripts
+
 ```bash
 pnpm run dev        # Development server
 pnpm run build      # Build for production
@@ -139,6 +156,7 @@ pnpm run lint       # Code linting
 ```
 
 ### Code Quality
+
 - ESLint with Next.js rules
 - TypeScript strict mode
 - Prettier formatting
@@ -146,6 +164,7 @@ pnpm run lint       # Code linting
 ## 🎨 Design System
 
 ### Components
+
 - Prompt Cards: Display prompts with metadata
 - Prompt Editor: Create and edit prompts
 - Search Bar: Real-time search
@@ -154,6 +173,7 @@ pnpm run lint       # Code linting
 - Color Picker: Theme selection
 
 ### Design Tokens
+
 - Color palette: 8 themes
 - Typography: System fonts with Tajawal for Arabic
 - Spacing: 4px grid

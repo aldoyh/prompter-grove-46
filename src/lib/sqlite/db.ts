@@ -3,6 +3,36 @@ import initSqlJs from 'sql.js';
 import type { Prompt } from '@/domain/models/Prompt';
 import type { Database } from 'sql.js';
 
+// Expose test function for debugging
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).testDatabase = async () => {
+    try {
+      console.log('Testing database initialization...');
+      const db = await getDatabase();
+      console.log('Database initialized successfully:', db);
+      
+      // Test insert
+      const testId = 'test_' + Date.now();
+      db.run('INSERT INTO prompts (id, title, text, tags, color, userId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [testId, 'Test', 'Test prompt', '[]', null, 'test-user', new Date().toISOString(), new Date().toISOString()]);
+      console.log('Test prompt inserted');
+      
+      // Test select
+      const stmt = db.prepare('SELECT * FROM prompts WHERE id = ?');
+      stmt.bind([testId]);
+      if (stmt.step()) {
+        console.log('Test prompt retrieved:', stmt.getAsObject());
+      }
+      stmt.free();
+      
+      return 'Database test passed!';
+    } catch (err) {
+      console.error('Database test failed:', err);
+      return 'Database test failed: ' + err;
+    }
+  };
+}
+
 interface DatabaseRow {
   id: string;
   title: string;
@@ -39,14 +69,46 @@ function getStorage(): Storage | null {
 }
 
 async function getDatabase(): Promise<Database> {
-  if (db) return db;
+  if (db) {
+    console.log('Database already initialized');
+    return db;
+  }
   
-  if (initPromise) return initPromise;
+  if (initPromise) {
+    console.log('Database initialization already in progress');
+    return initPromise;
+  }
   
   initPromise = (async () => {
     try {
+      const baseUrl = typeof window !== 'undefined' 
+        ? window.location.origin
+        : '';
+      
+      const wasmUrl = `${baseUrl}/sql-wasm.wasm`;
+      console.log('Initializing SQL.js with WASM path:', wasmUrl);
+      
+      // Test WASM file accessibility
+      if (typeof window !== 'undefined') {
+        try {
+          const testResponse = await fetch(wasmUrl);
+          console.log('WASM file fetch status:', testResponse.status, 'content-type:', testResponse.headers.get('content-type'));
+          if (!testResponse.ok) {
+            throw new Error(`WASM file returned status ${testResponse.status}`);
+          }
+        } catch (fetchErr) {
+          console.error('Failed to fetch WASM file:', fetchErr);
+        }
+      }
+      
       const SQL = await initSqlJs({
-        locateFile: (file: string) => `/${file}`
+        locateFile: (file: string) => {
+          // Try multiple sources for the wasm file
+          if (file.endsWith('.wasm')) {
+            return wasmUrl;
+          }
+          return `${baseUrl}/${file}`;
+        }
       });
       
       const storage = getStorage();
@@ -65,9 +127,11 @@ async function getDatabase(): Promise<Database> {
       
       createTables(db);
       saveDatabase(db);
-      
+       
+      console.log('Database initialized successfully');
       return db;
     } catch (err) {
+      console.error('Failed to initialize database:', err);
       initPromise = null;
       throw err;
     }
@@ -127,12 +191,14 @@ function rowToPrompt(row: DatabaseRow): Prompt {
 }
 
 export async function createPrompt(data: { title?: string; text: string; tags?: string[]; color?: 'slate' | 'rose' | 'amber' | 'emerald' | 'cyan' | 'indigo' | 'violet' | 'fuchsia' }, userId: string): Promise<Prompt> {
+  console.log('createPrompt called with:', { title: data.title, userId });
   const database = await getDatabase();
+  console.log('Database obtained, inserting prompt...');
   const id = userId + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
   const now = new Date().toISOString();
   
   database.run(
-    'INSERT INTO prompts (id, title, text, tags, color, userId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO prompts (id, title, text, tags, color, userId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     [id, data.title || '', data.text, JSON.stringify(data.tags || []), data.color || null, userId, now, now]
   );
   

@@ -1,0 +1,44 @@
+# Wrangler Configuration for Next.js Prompts App
+# https://developers.cloudflare.com/workers/wrangler/
+
+name = "prompts-app"
+type = "javascript"
+account_id = "your-account-id"
+workers_dev = true
+routes = []
+zone_id = ""
+
+# Build configuration
+build = { command = "pnpm build", cwd = "." }
+
+# Environment variables
+[env.production]
+name = "prompts-app-production"
+account_id = "your-account-id"
+routes = [{ pattern = "example.com/*", zone_id = "your-zone-id" }]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+name = "prompts-app-staging"
+account_id = "your-account-id"
+routes = [{ pattern = "staging.example.com/*", zone_id = "your-zone-id" }]
+vars = { ENVIRONMENT = "staging" }
+
+# KV Bindings for data storage
+[[kv_namespaces]]
+binding = "PROMPTS_KV"
+id = "your-kv-namespace-id"
+preview_id = "your-kv-preview-namespace-id"
+
+# R2 Binding for asset storage (optional)
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "prompts-app-assets"
+
+# Compatibility settings
+compatibility_date = "2024-02-14"
+compatibility_flags = ["nodejs_compat"]
+
+# Observability
+[observability]
+enabled = true

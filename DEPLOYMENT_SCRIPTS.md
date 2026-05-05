@@ -38,7 +38,7 @@ The primary wrapper for Wrangler CLI that handles the complete deployment lifecy
 Runs comprehensive checks before deployment to catch issues early.
 
 **Checks:**
-- ✓ Required commands (node, npm, git)
+- ✓ Required commands (node, pnpm, git)
 - ✓ Configuration files (wrangler.toml, .env.production)
 - ✓ Git repository status
 - ✓ Dependencies installation
@@ -156,8 +156,8 @@ export CLOUDFLARE_API_TOKEN="your-token"
 ./deploy.sh setup
 
 # What it does:
-# - Validates dependencies (node, npm, git)
-# - Installs npm packages
+# - Validates dependencies (node, pnpm, git)
+# - Installs pnpm packages
 # - Installs wrangler CLI
 # - Creates wrangler.toml
 # - Creates .env.production
@@ -186,7 +186,7 @@ export CLOUDFLARE_API_TOKEN="your-token"
 
 # What it does:
 # - Validates dependencies
-# - Installs npm packages
+# - Installs pnpm packages
 # - Runs next build
 # - Verifies build artifacts
 ```
@@ -362,8 +362,8 @@ npx tsc --noEmit
 
 # Clean and rebuild
 rm -rf .next node_modules
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 ### KV Namespace Not Found
@@ -397,7 +397,7 @@ npx wrangler kv:namespace create "PROMPTS_KV"
 
 4. **Optimize Build**
    ```bash
-   npm run build
+   pnpm run build
    # Look for large dependencies
    ```
 
@@ -470,7 +470,7 @@ Edit `wrangler.toml`:
 
 ```toml
 [build]
-command = "npm run build && npm run optimize"
+command = "pnpm run build && pnpm run optimize"
 ```
 
 ### Multiple Environments

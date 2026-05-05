@@ -47,9 +47,10 @@ echo -e "${BLUE}═════════════════════�
 # Basic checks
 echo -e "${BLUE}Basic Requirements:${NC}"
 run_check "Node.js installed" "command -v node"
-run_check "npm installed" "command -v npm"
+run_check "pnpm installed" "command -v pnpm"
 run_check "Git installed" "command -v git"
 run_check "package.json exists" "test -f '$PROJECT_ROOT/package.json'"
+run_check "pnpm-lock.yaml exists" "test -f '$PROJECT_ROOT/pnpm-lock.yaml'"
 
 # Configuration checks
 echo -e "\n${BLUE}Configuration Files:${NC}"
@@ -63,7 +64,7 @@ run_check "Git repository initialized" "test -d '$PROJECT_ROOT/.git'"
 run_check "Git has commits" "git -C '$PROJECT_ROOT' rev-parse HEAD > /dev/null 2>&1"
 
 if git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-    local uncommitted=$(git -C "$PROJECT_ROOT" status --porcelain | wc -l)
+    uncommitted=$(git -C "$PROJECT_ROOT" status --porcelain | wc -l)
     if [[ $uncommitted -eq 0 ]]; then
         run_check "Working directory clean" "test $uncommitted -eq 0"
     else

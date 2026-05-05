@@ -50,7 +50,7 @@ A production-ready, comprehensive deployment automation system has been successf
 - ✓ Colorized output
 
 **Checks:**
-- Node.js, npm, Git installed
+- Node.js, pnpm, Git installed
 - Configuration files present
 - Git repository initialized
 - Dependencies installed
@@ -164,20 +164,20 @@ System overview:
 
 **Added scripts for convenient deployment:**
 ```bash
-npm run deploy                 # Deploy to production
-npm run deploy:dry-run         # Preview deployment
-npm run deploy:setup           # Initial setup
-npm run deploy:build           # Build only
-npm run deploy:config          # Configure
-npm run deploy:staging         # Deploy to staging
-npm run deploy:health          # Health check
-npm run deploy:logs            # View logs
-npm run deploy:rollback        # Rollback
-npm run deploy:check           # Run pre-checks
-npm run wrangler:login         # Authenticate
-npm run wrangler:whoami        # Show user
-npm run wrangler:tail          # Real-time logs
-npm run wrangler:list          # Deployment history
+pnpm run deploy                 # Deploy to production
+pnpm run deploy:dry-run         # Preview deployment
+pnpm run deploy:setup           # Initial setup
+pnpm run deploy:build           # Build only
+pnpm run deploy:config          # Configure
+pnpm run deploy:staging         # Deploy to staging
+pnpm run deploy:health          # Health check
+pnpm run deploy:logs            # View logs
+pnpm run deploy:rollback        # Rollback
+pnpm run deploy:check           # Run pre-checks
+pnpm run wrangler:login         # Authenticate
+pnpm run wrangler:whoami        # Show user
+pnpm run wrangler:tail          # Real-time logs
+pnpm run wrangler:list          # Deployment history
 ```
 
 ---
@@ -258,7 +258,7 @@ npx wrangler login        # Authenticate
 | **Documentation** | 5 | 2000+ lines of guides & references |
 | **CI/CD Workflows** | 2 | Deploy.yml, CI.yml |
 | **Configuration Files** | 4 | .env.example, .gitignore-deployment, etc. |
-| **NPM Helper Scripts** | 14 | Convenient npm run commands |
+| **NPM Helper Scripts** | 14 | Convenient pnpm run commands |
 | **Total Code** | 1100+ | Bash scripts |
 | **Total Docs** | 2000+ | Markdown documentation |
 
@@ -271,14 +271,14 @@ npx wrangler login        # Authenticate
 - **CI/CD:** GitHub Actions
 - **Framework:** Next.js
 - **Language:** TypeScript, Bash
-- **Package Manager:** npm
+- **Package Manager:** pnpm
 
 ---
 
 ## 📋 Prerequisites
 
 ✓ Node.js v16+  
-✓ npm 7+  
+✓ pnpm 7+  
 ✓ Git  
 ✓ Cloudflare account  
 ✓ GitHub account (for CI/CD)  
@@ -339,7 +339,7 @@ cat CLOUDFLARE_DEPLOYMENT.md  # Full guide
 - Multiple examples
 
 ✅ **Well Integrated**
-- npm script helpers
+- pnpm script helpers
 - GitHub Actions workflows
 - Cloudflare integration
 - Git integration
@@ -385,7 +385,7 @@ npx wrangler whoami           # Check auth
 
 ### Scenario 2: Regular Deployment
 ```bash
-npm run deploy
+pnpm run deploy
 # One command to deploy
 ```
 

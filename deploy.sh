@@ -84,7 +84,7 @@ check_required_command() {
 check_dependencies() {
     log_section "Checking Dependencies"
     
-    local required_cmds=("node" "npm" "git")
+    local required_cmds=("node" "pnpm" "git")
     local missing=0
     
     for cmd in "${required_cmds[@]}"; do
@@ -115,6 +115,12 @@ check_configuration() {
         return 1
     fi
     log_success "Found package.json"
+    
+    if [[ ! -f "${PROJECT_ROOT}/pnpm-lock.yaml" ]]; then
+        log_warning "pnpm-lock.yaml not found (expected for pnpm projects)"
+    else
+        log_success "Found pnpm-lock.yaml"
+    fi
     
     if [[ ! -f "${PROJECT_ROOT}/next.config.ts" ]]; then
         log_warning "next.config.ts not found (optional)"
@@ -157,20 +163,20 @@ check_git_status() {
 #================================================================================
 
 setup_npm_dependencies() {
-    log_section "Installing/Updating NPM Dependencies"
+    log_section "Installing/Updating Dependencies"
     
     if [[ $DRY_RUN -eq 1 ]]; then
-        log_info "[DRY RUN] Would run: npm ci"
+        log_info "[DRY RUN] Would run: pnpm install"
         return 0
     fi
     
     cd "$PROJECT_ROOT"
     
-    if npm ci --prefer-offline --no-audit 2>&1 | tee -a "$LOG_FILE"; then
-        log_success "NPM dependencies installed"
+    if pnpm install --frozen-lockfile --silent 2>&1 | tee -a "$LOG_FILE"; then
+        log_success "Dependencies installed"
         return 0
     else
-        log_error "Failed to install NPM dependencies"
+        log_error "Failed to install dependencies"
         return 1
     fi
 }
@@ -188,12 +194,12 @@ install_wrangler() {
     log_info "Installing wrangler..."
     
     if [[ $DRY_RUN -eq 1 ]]; then
-        log_info "[DRY RUN] Would run: npm install wrangler --save-dev"
+        log_info "[DRY RUN] Would run: pnpm add -D wrangler"
         return 0
     fi
     
     cd "$PROJECT_ROOT"
-    if npm install wrangler --save-dev 2>&1 | tee -a "$LOG_FILE"; then
+    if pnpm add -D wrangler 2>&1 | tee -a "$LOG_FILE"; then
         log_success "Wrangler installed"
         return 0
     else
@@ -232,7 +238,7 @@ routes = []
 zone_id = ""
 
 # Build configuration
-build = { command = "npm run build", cwd = "." }
+build = { command = "pnpm build", cwd = "." }
 
 # Environment variables
 [env.production]
@@ -313,7 +319,7 @@ build_application() {
     log_section "Building Application"
     
     if [[ $DRY_RUN -eq 1 ]]; then
-        log_info "[DRY RUN] Would run: npm run build"
+        log_info "[DRY RUN] Would run: pnpm build"
         return 0
     fi
     
@@ -326,7 +332,7 @@ build_application() {
     fi
     
     log_info "Running build process..."
-    if npm run build 2>&1 | tee -a "$LOG_FILE"; then
+    if pnpm build 2>&1 | tee -a "$LOG_FILE"; then
         log_success "Application built successfully"
         
         # Show build artifacts
@@ -787,10 +793,10 @@ ENVIRONMENT VARIABLES:
 
 PREREQUISITES:
   • Node.js v16+
-  • npm or yarn
+  • pnpm, npm or yarn
   • Git (for version control)
   • Cloudflare account with Workers/Pages enabled
-  • wrangler CLI (installed via npm)
+  • wrangler CLI (installed via pnpm)
 
 CONFIGURATION FILES:
   • wrangler.toml              Wrangler configuration (created during setup)

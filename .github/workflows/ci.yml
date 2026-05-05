@@ -19,16 +19,34 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        run: npm run lint -- . --quiet || true
+        run: pnpm run lint -- . --quiet || true
 
       - name: Check TypeScript
-        run: npx tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
   build:
     runs-on: ubuntu-latest
@@ -38,17 +56,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build application
-        run: npm run build
+        run: pnpm build
         env:
           NODE_ENV: production
 
@@ -80,17 +103,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: npm test -- --passWithNoTests --coverage || true
+        run: pnpm test -- --passWithNoTests --coverage || true
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
@@ -107,26 +135,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Audit npm packages
-        run: npm audit --audit-level=moderate || true
-
-      - name: Check for known vulnerabilities
-        uses: github/super-linter@v4
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCKERFILE_HADOLINT_DISABLED: true
-          VALIDATE_BASH: false
-        continue-on-error: true
+      - name: Audit packages
+        run: pnpm audit || true
 
   dependency-check:
     runs-on: ubuntu-latest
@@ -136,20 +160,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Check for outdated packages
-        run: npm outdated || true
+        run: pnpm outdated || true
 
       - name: List dependencies
-        run: npm list --depth=0
+        run: pnpm list --depth=0
 
   summary:
     runs-on: ubuntu-latest

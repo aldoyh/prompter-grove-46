@@ -169,16 +169,16 @@ npx wrangler login        # Authenticate
 
 ### NPM Helper Scripts
 ```bash
-npm run deploy                 # Same as ./deploy.sh deploy
-npm run deploy:dry-run         # Same as ./deploy.sh deploy --dry-run
-npm run deploy:setup           # One-time setup
-npm run deploy:build           # Build only
-npm run deploy:health          # Health check
-npm run deploy:logs            # View logs
-npm run deploy:check           # Run pre-checks
-npm run wrangler:login         # Authenticate
-npm run wrangler:tail          # Real-time logs
-npm run wrangler:list          # Deployment history
+pnpm run deploy                 # Same as ./deploy.sh deploy
+pnpm run deploy:dry-run         # Same as ./deploy.sh deploy --dry-run
+pnpm run deploy:setup           # One-time setup
+pnpm run deploy:build           # Build only
+pnpm run deploy:health          # Health check
+pnpm run deploy:logs            # View logs
+pnpm run deploy:check           # Run pre-checks
+pnpm run wrangler:login         # Authenticate
+pnpm run wrangler:tail          # Real-time logs
+pnpm run wrangler:list          # Deployment history
 ```
 
 ---
@@ -271,7 +271,7 @@ GitHub Actions (deploy.yml)
 
 ### 2. **Regular Deployment**
 ```bash
-npm run deploy       # One command to deploy
+pnpm run deploy       # One command to deploy
 ```
 
 ### 3. **Staged Deployment**
@@ -304,7 +304,7 @@ npx wrangler tail                  # Real-time logs
 
 ### Must Installed
 - [ ] Node.js v16+
-- [ ] npm 7+
+- [ ] pnpm 7+
 - [ ] Git
 - [ ] Cloudflare account
 
